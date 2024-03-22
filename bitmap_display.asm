@@ -40,6 +40,11 @@ T_Tetromino:
     .word 1, 1  # Middle square (base point)
     .word 2, 1  # Right square
     .word 1, 2  # Bottom square
+Straight_Tetromino:
+    .word 0, 0  # Center square
+    .word 0, 1  # Left square
+    .word 0, 2  # Middle square (base point)
+    .word 0, 3  # Right square
 TetrominoOffsets:
     .word 0, 0   # Base square
     .word 4, 0   # Right square
@@ -52,7 +57,6 @@ TetrominoSize:
 	.globl main
 main:
     li $t5, 0x0000ff
-
     lw $t0, ADDR_DSPL       # $t0 = base address for display
     addi $t0, $t0, 2048
     li $t2, 0
@@ -60,10 +64,6 @@ main:
     li $t8 0 # for keeping track of colour row-wise
     li $t6, 4              # $t6 = 4 for dividing $t3 by 4   
     li $t8, 64
-    
-
-    li $a0, 3
-    li $a1, 3
 setup_loop:
     beq $t2, 3064, fill    # 4096 - 1024 - 8 (margin)
     div $t2, $t8
@@ -73,121 +73,6 @@ setup_loop:
     beq $t9, 0, increment # if remainer is 0, add left margin
 
     j condition
-    
-create_tetromino:
-    li $t0, 6
-    addi $sp, $sp, -4  # Decrement the stack pointer to make space
-    sw $t0, 0($sp)     # Save the value of $t0 to the top of the stack
-    
-    addi $sp, $sp, -4
-    sw $t0, 0($sp)
-    
-    addi $sp, $sp, -4
-    sw $t0, 0($sp)
-    
-    li $t0, 7
-    addi $sp, $sp, -4
-    sw $t0, 0($sp)
-    
-    addi $sp, $sp, -4
-    sw $t0, 0($sp)
-    
-    addi $sp, $sp, -4
-    sw $t0, 0($sp)
-    
-    # above should store info for 3 blocks
-
-draw_tetromino:
-    # $a0 = x coordinate of the tetromino's base point
-    # $a1 = y coordinate of the tetromino's base point
-    # $a2 = address of the tetromino data (e.g., address of T_Tetromino)
-
-    li $a3, 4   # Load the size of the tetromino (number of squares)
-    li $t9, 0               # Index for iterating through tetromino squares
-    j draw_square_loop
-draw_square_loop:
-    # Calculate address of the current square's data
-    add $t1, $a2, $t9      # $t1 = address of the current square's offset data
-    lw $t2, 0($t1)         # Load x offset of the current square
-    lw $t3, 0($t1)         # Load y offset of the current square
-    
-    add $a0, $a0, $t2      # Calculate absolute x coordinate
-    add $a1, $a1, $t3      # Calculate absolute y coordinate
-    # add $a0, $a0, 1      # Calculate absolute x coordinate
-    # add $a1, $a1, 1      # Calculate absolute y coordinate
-    
-
-    # Assuming draw_square and remove_square are functions that draw/remove a square at ($a0, $a1)
-    jal fill_square        # Draw the square
-
-    # Restore $a0 and $a1 for next iteration
-    sub $a0, $a0, $t2      
-    sub $a1, $a1, $t3
-
-    addi $t9, $t9, 1       # Move to the next square's data
-    addi $a3, $a3, -1      # Decrement the counter
-    bnez $a3, draw_square_loop  # If there are more squares, continue the loop
-
-    # jr $ra   # Return to the caller
-    j exit
-    
-fill:
-    li $t5, 0x0000ff         # $t5 = color
-    # Set x and y coordinates for the tetromino's base point
-    li $a0, 5    # x coordinate of the tetromino's base point on the grid
-    li $a1, 6    # y coordinate of the tetromino's base point on the grid
-
-    # Set the address of the tetromino shape data
-    la $a2, T_Tetromino  # Address of the T Tetromino data
-    # j draw_tetromino
-    j fill_square
- 
-start:
-    # j fill_square
-    # Load the color to a temporary register
-    li $t5, 0x0000ff         # $t5 = color
-    
-    # li 		$v0, 32
-	# li 		$a2, 1
-	# syscall
-
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
-    lw $t8, 0($t0)                  # Load first word from keyboard
-    beq $t8, 1, keyboard_input      # If first word 1, key is pressed
-    b start
-
-# handle input
-keyboard_input:                     
-    lw $a2, 4($t0)
-    beq $a2, 0x71, exit
-    beq $a2, 0x77, key_w_pressed
-    beq $a2, 0x61, key_a_pressed
-    beq $a2, 0x73, key_s_pressed
-    beq $a2, 0x64, key_d_pressed
-    beq $a2, 0x78, key_x_pressed
-    b start
-key_x_pressed:
-    j delete_square
-key_w_pressed:
-    addi $a1, $a1, -1
-    bne $a1, 1, fill_square
-    li $a1, 2
-    j fill_square
-key_a_pressed:
-    addi $a0, $a0, -1
-    bne $a0, 1, fill_square
-    li $a0, 2
-    j fill_square
-key_s_pressed:
-    addi $a1, $a1, 1
-    bne $a1, 14, fill_square
-    li $a1, 13
-    j fill_square
-key_d_pressed:
-    addi $a0, $a0, 1
-    bne $a0, 14, fill_square
-    li $a0, 13
-    j fill_square
 
 # grid creation
 increment:
@@ -231,6 +116,116 @@ set_light:
     li $t5, 0x424242           
     j set_color
 
+# drawing tetrominos
+fill:
+    li $t5, 0x0000ff         # $t5 = color
+    li $a0, 5    # x coordinate of the tetromino's base point on the grid
+    li $a1, 6    # y coordinate of the tetromino's base point on the grid
+    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    j draw_tetromino
+    # j move_tetromino
+draw_tetromino:
+    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    li $a3, 8   # Load the size of the tetromino (2 x number of squares)
+    j draw_square_loop
+draw_square_loop:
+    lw $t2, 0($a2)         # Load x offset of the current square
+    lw $t3, 0($a2)         # Load y offset of the current square
+    
+    srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
+    add $a0, $a0, $t8     # Add it to $a0
+    andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
+    add $a1, $a1, $t9     # Add it to $a1
+    jal fill_square        # Draw the square
+
+    sub $a0, $a0, $t8      
+    sub $a1, $a1, $t9
+    addi $a2, $a2, 4
+    addi $a3, $a3, -1      # Decrement the counter
+    bnez $a3, draw_square_loop  # If there are more squares, continue the loop
+    
+    # jr $ra   # Return to the caller
+    j move_tetromino
+    
+move_tetromino:
+    # for each member of tetromino
+    # increment it by value from input
+    # delete square at existing values
+    # initial points of tetromino stored in a0 and a1
+    # basically call draw tetromino with new a0 and a1
+    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+    lw $t8, 0($t0)                  # Load first word from keyboard
+    beq $t8, 1, keyboard_input      # If first word 1, key is pressed
+    b move_tetromino
+    
+delete_tetromino:
+    li $a3, 8   # Load the size of the tetromino (2 x number of squares)
+    j delete_square_loop
+delete_square_loop:
+    lw $t2, 0($a2)         # Load x offset of the current square
+    lw $t3, 0($a2)         # Load y offset of the current square
+    
+    srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
+    add $a0, $a0, $t8     # Add it to $a0
+    andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
+    add $a1, $a1, $t9     # Add it to $a1
+    jal delete_square        # Draw the square
+
+    sub $a0, $a0, $t8      
+    sub $a1, $a1, $t9
+    addi $a2, $a2, 4
+    addi $a3, $a3, -1      # Decrement the counter
+    bnez $a3, delete_square_loop  # If there are more squares, continue the loop
+    
+    jr $ra   # Return to the caller
+    # j move_tetromino   
+start:
+    # j fill_square
+    # Load the color to a temporary register
+    li $t5, 0x0000ff         # $t5 = color
+    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+    lw $t8, 0($t0)                  # Load first word from keyboard
+    beq $t8, 1, keyboard_input      # If first word 1, key is pressed
+    b start
+
+# handle input
+keyboard_input:                     
+    lw $a3, 4($t0)
+    beq $a3, 0x71, exit
+    beq $a3, 0x77, key_w_pressed
+    beq $a3, 0x61, key_a_pressed
+    beq $a3, 0x73, key_s_pressed
+    beq $a3, 0x64, key_d_pressed
+    beq $a3, 0x78, key_x_pressed
+    b move_tetromino
+key_x_pressed:
+    j delete_square
+key_w_pressed:
+    jal delete_tetromino
+    addi $a1, $a1, -1
+    bne $a1, 1, draw_tetromino
+    li $a1, 2
+    j draw_tetromino
+key_a_pressed:
+    jal delete_tetromino
+    addi $a0, $a0, -1
+    bne $a0, 1, draw_tetromino
+    li $a0, 2
+    j draw_tetromino
+key_s_pressed:
+    jal delete_tetromino
+    addi $a1, $a1, 1
+    bne $a1, 14, draw_tetromino
+    li $a1, 13
+    j draw_tetromino
+key_d_pressed:
+    jal delete_tetromino
+    addi $a0, $a0, 1
+    bne $a0, 14, draw_tetromino
+    li $a0, 13
+    j draw_tetromino
+
 # drawing individual squares
 fill_square:
     # Arguments:
@@ -244,9 +239,7 @@ fill_square:
     # Convert grid coordinates to pixel coordinates
     sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
     sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
-    # mul $t0, $a0, $s0       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    # mul $t1, $a1, $s0       # $t1 = y * 4 (since each cell is 4 pixels high)
-    
+
     # Calculate starting memory address for the square
     lw $t2, ADDR_DSPL     # $t2 = base address for the display
     # need to add 64 times y plus x for initial location
@@ -272,9 +265,7 @@ draw_square_column:
     addi $t2, $t2, 240     # Skip the remaining pixels to get to the start of the next row (64 * 4 - 16 = 240)
     addi $t6, $t6, -1     # Decrement the row counter
     bnez $t6, draw_square_row   # Continue drawing rows if $t6 != 0
-
-    # jr $ra  # Return to the caller
-    j start
+    jr $ra  # Return to the caller
 
 # deleting squares
 delete_square:
@@ -291,7 +282,8 @@ delete_square:
     bnez $s2, colour_light
     
     # li $t5, 0x212121
-    j fill_square
+    # j fill_square
+    jr $ra
 colour_dark:
     li $t5, 0x212121
     j fill_square
