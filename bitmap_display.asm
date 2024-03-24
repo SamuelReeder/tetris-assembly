@@ -125,9 +125,10 @@ fill:
     j draw_tetromino
     # j move_tetromino
 draw_tetromino:
+    li $t5, 0x0000ff         # $t5 = color
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
     li $a3, 8   # Load the size of the tetromino (2 x number of squares)
-    j draw_square_loop
+    # j draw_square_loop
 draw_square_loop:
     lw $t2, 0($a2)         # Load x offset of the current square
     lw $t3, 0($a2)         # Load y offset of the current square
@@ -156,12 +157,12 @@ move_tetromino:
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
     lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t0)                  # Load first word from keyboard
-    beq $t8, 1, keyboard_input      # If first word 1, key is pressed
+    beq $t8, 1, keyboard     # If first word 1, key is pressed
     b move_tetromino
     
 delete_tetromino:
-    li $a3, 8   # Load the size of the tetromino (2 x number of squares)
-    j delete_square_loop
+    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    li $a3,8   # Load the size of the tetromino (2 x number of squares)
 delete_square_loop:
     lw $t2, 0($a2)         # Load x offset of the current square
     lw $t3, 0($a2)         # Load y offset of the current square
@@ -177,9 +178,11 @@ delete_square_loop:
     addi $a2, $a2, 4
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, delete_square_loop  # If there are more squares, continue the loop
-    
-    jr $ra   # Return to the caller
-    # j move_tetromino   
+    j keyboard_input
+
+hi:
+    li $v0, 1       # Load the syscall for printing an integer (1)
+    syscall   
 start:
     # j fill_square
     # Load the color to a temporary register
@@ -189,10 +192,19 @@ start:
     beq $t8, 1, keyboard_input      # If first word 1, key is pressed
     b start
 
-# handle input
-keyboard_input:                     
-    lw $a3, 4($t0)
+keyboard:
     beq $a3, 0x71, exit
+        
+    addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
+    sw $a3, 0($sp)     # Store the value from $t0 into the stack
+    j delete_tetromino
+# handle input
+keyboard_input:
+    lw $a3, 0($sp)     # Load the value from the stack into $t0
+    addi $sp, $sp, 4   # Increment stack pointer to remove the value from the stack
+    
+    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+    lw $a3, 4($t0)
     beq $a3, 0x77, key_w_pressed
     beq $a3, 0x61, key_a_pressed
     beq $a3, 0x73, key_s_pressed
@@ -200,27 +212,27 @@ keyboard_input:
     beq $a3, 0x78, key_x_pressed
     b move_tetromino
 key_x_pressed:
-    j delete_square
-key_w_pressed:
     jal delete_tetromino
+    j move_tetromino
+key_w_pressed:
     addi $a1, $a1, -1
     bne $a1, 1, draw_tetromino
     li $a1, 2
     j draw_tetromino
 key_a_pressed:
-    jal delete_tetromino
+    # jal delete_tetromino
     addi $a0, $a0, -1
     bne $a0, 1, draw_tetromino
     li $a0, 2
     j draw_tetromino
 key_s_pressed:
-    jal delete_tetromino
+    # jal delete_tetromino
     addi $a1, $a1, 1
     bne $a1, 14, draw_tetromino
     li $a1, 13
     j draw_tetromino
 key_d_pressed:
-    jal delete_tetromino
+    # jal delete_tetromino
     addi $a0, $a0, 1
     bne $a0, 14, draw_tetromino
     li $a0, 13
@@ -228,14 +240,7 @@ key_d_pressed:
 
 # drawing individual squares
 fill_square:
-    # Arguments:
-    # $a0 = x (grid coordinate)
-    # $a1 = y (grid coordinate)
-    # $a2 = color
-    # for now 1 < (a0, a1) < 14
-    
     li $s0, 4
-        
     # Convert grid coordinates to pixel coordinates
     sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
     sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
@@ -246,12 +251,8 @@ fill_square:
     li $t3, 64            # $t3 = width of the display in pixels
     mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
     add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    
-
     mul $t4, $t4, 4       # multiply by 4
     add $t2, $t2, $t4     # $t2 = starting address for the square
-
-    # Draw the 4x4 pixel square
     li $t6, 4             # $t6 = counter for rows
 draw_square_row:
     li $t7, 4             # $t7 = counter for columns
@@ -270,19 +271,13 @@ draw_square_column:
 # deleting squares
 delete_square:
     li $s0, 2
-    
     div $a0, $s0
     mfhi $s1
-    
     div $a1, $s0
     mfhi $s2
-    
     beq $s1, $s2, colour_dark
     bnez $s1, colour_light
     bnez $s2, colour_light
-    
-    # li $t5, 0x212121
-    # j fill_square
     jr $ra
 colour_dark:
     li $t5, 0x212121
