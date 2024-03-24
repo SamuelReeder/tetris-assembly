@@ -10,6 +10,19 @@ Straight_Tetromino:
     .word 0, 3  # Right square
     .word 4, 0 # height and start index of first column
     .word 0, 0 # height and start index of second column
+Line:
+    .word 0, 0
+    .word 1, 0
+    .word 2, 0
+    .word 3, 0
+    .word 4, 0
+    .word 5, 0
+    .word 6, 0
+    .word 7, 0
+    .word 8, 0
+    .word 9, 0
+    .word 10, 0
+    .word 11, 0
 TetrominoSize:
     .byte 4     # Number of squares in the tetromino
 
@@ -76,11 +89,14 @@ set_light:
     li $t5, 0x424242           
     j set_color
 
+new_tetromino:
+    j fill
+
 # drawing tetrominos
 fill:
     li $t5, 0x0000ff         # $t5 = color
-    li $a0, 5    # x coordinate of the tetromino's base point on the grid 
-    li $a1, 6    # y coordinate of the tetromino's base point on the grid
+    li $a0, 2    # x coordinate of the tetromino's base point on the grid 
+    li $a1, 2    # y coordinate of the tetromino's base point on the grid
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
     j draw_tetromino
     # j move_tetromino
@@ -88,7 +104,6 @@ draw_tetromino:
     li $t5, 0x0000ff         # $t5 = color
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
     li $a3, 8   # Load the size of the tetromino (2 x number of squares)
-    # j draw_square_loop
 draw_square_loop:
     lw $t2, 0($a2)         # Load x offset of the current square
     lw $t3, 0($a2)         # Load y offset of the current square
@@ -110,6 +125,27 @@ move_tetromino:
     lw $t8, 0($t0)                  # Load first word from keyboard
     beq $t8, 1, keyboard     # If first word 1, key is pressed
     b move_tetromino
+
+draw_tetromino_and_new:
+    li $t5, 0x0000ff         # $t5 = color
+    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    li $a3, 8   # Load the size of the tetromino (2 x number of squares)
+draw_square_loop_and_new:
+    lw $t2, 0($a2)         # Load x offset of the current square
+    lw $t3, 0($a2)         # Load y offset of the current square
+    
+    srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
+    add $a0, $a0, $t8     # Add it to $a0
+    andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
+    add $a1, $a1, $t9     # Add it to $a1
+    jal fill_square        # Draw the square
+
+    sub $a0, $a0, $t8      
+    sub $a1, $a1, $t9
+    addi $a2, $a2, 4
+    addi $a3, $a3, -1      # Decrement the counter
+    bnez $a3, draw_square_loop_and_new  # If there are more squares, continue the loop
+    j check_for_lines_init
     
 delete_tetromino:
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
@@ -122,7 +158,7 @@ delete_square_loop:
     add $a0, $a0, $t8     # Add it to $a0
     andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
     add $a1, $a1, $t9     # Add it to $a1
-    jal delete_square        # Draw the square
+    jal delete_square
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
@@ -182,10 +218,9 @@ key_d_pressed:
     li $a0, 13
     j draw_tetromino
 return_pressed:
-    li $v0, 1       # Load the syscall for printing an integer (1)
-    syscall     
     j find_row
-# key_q_pressed
+key_q_pressed:
+
     
 find_row:
     la $a2, Straight_Tetromino
@@ -210,10 +245,78 @@ check_square:
     bne $s0, 0x0000ff, next_row # If color does not match, go to next row
 found_row:
     sub $a1, $a1, $t9
-    li $v0, 1       # Load the syscall for printing an integer (1)
-    syscall         # Execute the syscall
-    j draw_tetromino
+    # need to first remove rows
+    j draw_tetromino_and_new
 
+check_for_lines_init:
+    li $a1, 2
+    addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
+    sw $a1, 0($sp)   
+check_for_lines:
+    lw $a1, 0($sp)     # Load the value from the stack into $t0
+    addi $sp, $sp, 4   # Increment stack pointer to remove the value from the stack
+    beq $a1, 15, fill
+    addi $a1, $a1, 1
+    addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
+    sw $a1, 0($sp)  
+    addi $a1, $a1, -1
+    lw $t2, ADDR_DSPL
+    li $t3, 64            # $t3 = width of the display in pixels
+new_row:
+    beq $a1, 15, fill
+    li $a0, 2
+    lw $t2, ADDR_DSPL
+    li $t3, 64            # $t3 = width of the display in pixels
+    addi $a1, $a1, 1
+    li $t9, 0
+    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high).
+    mult $t4, $t1, $t3     # $t4 = y * width of display (row offset)
+    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)
+    mult $t4, $t4, 4       # multiply by 4
+    add $t2, $t2, $t4     # $t2 = starting address for the square
+check:
+    lw $s0, 0($t2)             # Load the color at current address 
+    bne $s0, 0x0000ff, new_row # If color does not match, go to next row
+    beq $t9, 11, remove_row
+    addi $t9, $t9, 1
+    addi $t2, $t2, 16
+    j check
+remove_row:
+    li $a0, 1
+    la $a2, Line  # Address of the T Tetromino data
+remove_row_loop: 
+    addi $a0, $a0, 1     # Add it to $a0 
+    jal delete_square
+    bne $a0, 13 remove_row_loop  # If there are more squares, continue the loop
+shift_down:
+    beq $a1, 2, check_for_lines
+    li $a0, 2
+    addi $a1, $a1, -1
+check_square_new:
+    beq $a0, 14, shift_down
+    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    lw $t2, ADDR_DSPL
+    li $t3, 64            # $t3 = width of the display in pixels
+    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
+    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
+    mul $t4, $t4, 4       # multiply by 4
+    add $t2, $t2, $t4     # $t2 = starting address for the square
+    lw $s0, 0($t2)             # Load the color at current address
+    addi $a0, $a0, 1
+    bne $s0, 0x0000ff, check_square_new
+delete_and_new:
+    addi $a0, $a0, -1
+    jal delete_square
+    addi $a1, $a1, 1
+    li $t5, 0x0000ff         # $t5 = color
+    jal fill_square
+    addi $a0, $a0, 1
+    addi $a1, $a1, -1
+    j check_square_new
+
+    
 # drawing individual squares
 fill_square:
     li $s0, 4
