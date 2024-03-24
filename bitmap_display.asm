@@ -1,17 +1,3 @@
-##############################################################################
-# Example: Displaying Pixels
-#
-# This file demonstrates how to draw pixels with different colours to the
-# bitmap display.
-##############################################################################
-
-######################## Bitmap Display Configuration ########################
-# - Unit width in pixels: 8
-# - Unit height in pixels: 8
-# - Display width in pixels: 256
-# - Display height in pixels: 256
-# - Base Address for Display: 0x10008000 ($gp)
-##############################################################################
     .data
 ADDR_DSPL:
     .word 0x10008000
@@ -22,6 +8,8 @@ Straight_Tetromino:
     .word 0, 1  # Left square
     .word 0, 2  # Middle square (base point)
     .word 0, 3  # Right square
+    .word 4, 0 # height and start index of first column
+    .word 0, 0 # height and start index of second column
 TetrominoSize:
     .byte 4     # Number of squares in the tetromino
 
@@ -91,7 +79,7 @@ set_light:
 # drawing tetrominos
 fill:
     li $t5, 0x0000ff         # $t5 = color
-    li $a0, 5    # x coordinate of the tetromino's base point on the grid
+    li $a0, 5    # x coordinate of the tetromino's base point on the grid 
     li $a1, 6    # y coordinate of the tetromino's base point on the grid
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
     j draw_tetromino
@@ -116,16 +104,7 @@ draw_square_loop:
     addi $a2, $a2, 4
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, draw_square_loop  # If there are more squares, continue the loop
-    
-    # jr $ra   # Return to the caller
-    j move_tetromino
-    
 move_tetromino:
-    # for each member of tetromino
-    # increment it by value from input
-    # delete square at existing values
-    # initial points of tetromino stored in a0 and a1
-    # basically call draw tetromino with new a0 and a1
     la $a2, Straight_Tetromino  # Address of the T Tetromino data
     lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t0)                  # Load first word from keyboard
@@ -151,10 +130,6 @@ delete_square_loop:
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, delete_square_loop  # If there are more squares, continue the loop
     j keyboard_input
-
-hi:
-    li $v0, 1       # Load the syscall for printing an integer (1)
-    syscall   
 start:
     # j fill_square
     # Load the color to a temporary register
@@ -170,7 +145,6 @@ keyboard:
     addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
     sw $a3, 0($sp)     # Store the value from $t0 into the stack
     j delete_tetromino
-# handle input
 keyboard_input:
     lw $a3, 0($sp)     # Load the value from the stack into $t0
     addi $sp, $sp, 4   # Increment stack pointer to remove the value from the stack
@@ -182,10 +156,10 @@ keyboard_input:
     beq $a3, 0x73, key_s_pressed
     beq $a3, 0x64, key_d_pressed
     beq $a3, 0x78, key_x_pressed
-    beq $a3, 0x0D, return_pressed
+    beq $a3, 0x65, return_pressed
+    beq $a3, 0x71, key_q_pressed
     b move_tetromino
 key_x_pressed:
-    jal delete_tetromino
     j move_tetromino
 key_w_pressed:
     addi $a1, $a1, -1
@@ -193,25 +167,52 @@ key_w_pressed:
     li $a1, 2
     j draw_tetromino
 key_a_pressed:
-    # jal delete_tetromino
     addi $a0, $a0, -1
     bne $a0, 1, draw_tetromino
     li $a0, 2
     j draw_tetromino
 key_s_pressed:
-    # jal delete_tetromino
     addi $a1, $a1, 1
     bne $a1, 14, draw_tetromino
     li $a1, 13
     j draw_tetromino
 key_d_pressed:
-    # jal delete_tetromino
     addi $a0, $a0, 1
     bne $a0, 14, draw_tetromino
     li $a0, 13
     j draw_tetromino
 return_pressed:
+    li $v0, 1       # Load the syscall for printing an integer (1)
+    syscall     
+    j find_row
+# key_q_pressed
     
+find_row:
+    la $a2, Straight_Tetromino
+    lw $t9, 32($a2)
+    add $a1, $a1, $t9
+    # we start looking at t1
+    j check_square
+next_row:
+    beq $a1, 14, found_row
+    addi $a1, $a1, 1
+    j check_square                # Repeat for the next row
+check_square:
+    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    lw $t2, ADDR_DSPL
+    li $t3, 64            # $t3 = width of the display in pixels
+    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
+    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
+    mul $t4, $t4, 4       # multiply by 4
+    add $t2, $t2, $t4     # $t2 = starting address for the square
+    lw $s0, 0($t2)             # Load the color at current address
+    bne $s0, 0x0000ff, next_row # If color does not match, go to next row
+found_row:
+    sub $a1, $a1, $t9
+    li $v0, 1       # Load the syscall for printing an integer (1)
+    syscall         # Execute the syscall
+    j draw_tetromino
 
 # drawing individual squares
 fill_square:
