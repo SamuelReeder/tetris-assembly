@@ -17,39 +17,11 @@ ADDR_DSPL:
     .word 0x10008000
 ADDR_KBRD:
     .word 0xffff0000
-TETROMINOES:
-    .space 288
-I_Tetromino:
-    .byte 0b0000, 0b1111, 0b0000, 0b0000  # Vertical representation
-    # .byte 0b0010, 0b0010, 0b0010, 0b0010  # Horizontal representation (alternative)
-# T_Tetromino:
-    # .byte 1, 0  # Center square
-    # .byte 0, 1  # Left square
-    # .byte 1, 1  # Middle square (base point)
-    # .byte 2, 1  # Right square
-    # .byte 1, 2  # Bottom square
-# T_Tetromino:
-    # .word 0, 0   # Center square (relative to itself as a base)
-    # .word -1, 1  # Left square
-    # .word 0, 1   # Middle square (base point)
-    # .word 1, 1   # Right square
-    # .word 0, 2   # Bottom square
-T_Tetromino:
-    .word 1, 0  # Center square
-    .word 0, 1  # Left square
-    .word 1, 1  # Middle square (base point)
-    .word 2, 1  # Right square
-    .word 1, 2  # Bottom square
 Straight_Tetromino:
     .word 0, 0  # Center square
     .word 0, 1  # Left square
     .word 0, 2  # Middle square (base point)
     .word 0, 3  # Right square
-TetrominoOffsets:
-    .word 0, 0   # Base square
-    .word 4, 0   # Right square
-    .word 0, 4   # Bottom square
-    .word -4, 0  # Left square
 TetrominoSize:
     .byte 4     # Number of squares in the tetromino
 
@@ -210,6 +182,7 @@ keyboard_input:
     beq $a3, 0x73, key_s_pressed
     beq $a3, 0x64, key_d_pressed
     beq $a3, 0x78, key_x_pressed
+    beq $a3, 0x0D, return_pressed
     b move_tetromino
 key_x_pressed:
     jal delete_tetromino
@@ -237,6 +210,8 @@ key_d_pressed:
     bne $a0, 14, draw_tetromino
     li $a0, 13
     j draw_tetromino
+return_pressed:
+    
 
 # drawing individual squares
 fill_square:
