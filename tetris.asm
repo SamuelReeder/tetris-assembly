@@ -21,33 +21,120 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
+# tetromino has max of 4 blocks
+# firt eight words are xy for each block
+# next 8 are height and start of each col
+# last 2 are references to their rotations
 Straight_Tetromino:
-    .word 0, 0  # Center square
-    .word 0, 1  # Left square
-    .word 0, 2  # Middle square (base point)
-    .word 0, 3  # Right square
+    .word 0, 0
+    .word 0, 1
+    .word 0, 2
+    .word 0, 3
     .word 4, 0 # height and start index of first column
     .word 0, 0 # height and start index of second column
-Line:
+    .word 0, 0 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word Straight_Tetromino_Horizontal, Straight_Tetromino_Horizontal
+Straight_Tetromino_Horizontal:
     .word 0, 0
     .word 1, 0
     .word 2, 0
     .word 3, 0
-    .word 4, 0
-    .word 5, 0
-    .word 6, 0
-    .word 7, 0
-    .word 8, 0
-    .word 9, 0
-    .word 10, 0
-    .word 11, 0
-TetrominoSize:
-    .byte 4     # Number of squares in the tetromino
+    .word 1, 0 # height and start index of first column
+    .word 1, 0 # height and start index of second column
+    .word 1, 0 # height and start index of third column
+    .word 1, 0 # height and start index of fourth column
+    .word Straight_Tetromino, Straight_Tetromino
+L_Tetromino:
+    .word 0, 0
+    .word 0, 1 
+    .word 0, 2
+    .word 1, 2
+    .word 3, 0 # height and start index of first column
+    .word 1, 2 # height and start index of second column
+    .word 0, 0 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word L_Tetromino_L, L_Tetromino_R
+# store rotations for each tetromino and easily draw them
+L_Tetromino_R:
+    .word 0, 0
+    .word 1, 0
+    .word 2, 0
+    .word 2, -1
+    .word 1, 0 # height and start index of first column
+    .word 1, 0 # height and start index of second column
+    .word 2, -1 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word L_Tetromino, L_Tetromino_D
+L_Tetromino_L:
+    .word 0, 0
+    .word 0, 1
+    .word 1, 0
+    .word 2, 0
+    .word 0, 2 # height and start index of first column
+    .word 0, 1 # height and start index of second column
+    .word 0, 1 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word L_Tetromino, L_Tetromino_D
+L_Tetromino_D:
+    .word 0, 0
+    .word 1, 0
+    .word 1, 1
+    .word 1, 2
+    .word 1, 0 # height and start index of first column
+    .word 3, 0 # height and start index of second column
+    .word 0, 0 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word L_Tetromino_R, L_Tetromino_L
+Zig_Tetromino:
+    .word 0, 0
+    .word 0, 1
+    .word 1, 1
+    .word 1, 2
+    .word 2, 0 # height and start index of first column
+    .word 2, 1 # height and start index of second column
+    .word 0, 0 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word Zig_Tetromino_L, Zig_Tetromino_R
+Zig_Tetromino_L:
+    .word 0, 0
+    .word 1, 0
+    .word 1, 1
+    .word 2, 1
+    .word 1, 0 # height and start index of first column
+    .word 2, 0 # height and start index of second column
+    .word 1, 1 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word L_Tetromino, Zig_Tetromino_D
+Zig_Tetromino_R:
+    .word 0, 1
+    .word 1, 1
+    .word 1, 0
+    .word 2, 0
+    .word 1, 1 # height and start index of first column
+    .word 2, 0 # height and start index of second column
+    .word 1, 0 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word Zig_Tetromino_D, Zig_Tetromino
+Zig_Tetromino_D:
+    .word 1, 0
+    .word 1, 1
+    .word 0, 1
+    .word 0, 2
+    .word 2, 1 # height and start index of first column
+    .word 2, 0 # height and start index of second column
+    .word 0, 0 # height and start index of third column
+    .word 0, 0 # height and start index of fourth column
+    .word L_Tetromino_R, L_Tetromino_L
+
+
 
 
 ##############################################################################
 # Mutable Data
 ##############################################################################
+Current_Tetromino:
+    .word L_Tetromino    # This contains the address of L_Tetromino
 
 ##############################################################################
 # Code
@@ -64,6 +151,7 @@ main:
     li $t8 0 # for keeping track of colour row-wise
     li $t6, 4              # $t6 = 4 for dividing $t3 by 4   
     li $t8, 64
+    # j score
 setup_loop:
     beq $t2, 3064, fill    # 4096 - 1024 - 8 (margin)
     div $t2, $t8
@@ -74,6 +162,67 @@ setup_loop:
 
     j condition
 
+score:
+    # given register with integer
+    # dissect the integer into its bytes
+    # for each byte have up to 9 conditionals
+    # draw specified number
+    j draw_one
+
+draw_one:
+    li $t9, 0
+    addi $t0, $t0, 4
+loop_one:
+    sw $t5, 0($t0)         # Store color value at the current address
+    # addi $t9, $t9, 256
+    beq $t9, 6, exit
+    addi $t0, $t0, 256
+    addi $t9, $t9, 1
+    j loop_one
+
+draw_two:
+    li $t9, 0
+    addi $t0, $t0, 4
+    li $t8, 4
+loop_two:
+    sw $t5, 0($t0)
+    add $t0, $t0, $t8
+    # basically, have t8 to add ono t0
+    # when t9 reaches certain milestones, needs to change t8
+    # can basically say if < 4 set to loop, if that fails then set to next (256), if less than 8 loop, if that fails it is set to next (-4)
+    bne $t9, 4, loop_two
+    li $t8, 256
+    bne $t9, 8, loop_two
+    li $t8, -4
+    bne $t9, 12, loop_two
+    li $t8, 256
+    bne $t9, 16, loop_two
+    li $t8, 4
+    bne $t9, 20, loop_two
+    j exit
+    
+draw_three:
+    li $t9, 0
+    addi $t0, $t0, 4
+    li $t8, 4
+loop_two:
+    sw $t5, 0($t0)
+    add $t0, $t0, $t8
+    # basically, have t8 to add ono t0
+    # when t9 reaches certain milestones, needs to change t8
+    # can basically say if < 4 set to loop, if that fails then set to next (256), if less than 8 loop, if that fails it is set to next (-4)
+    bne $t9, 4, loop_two
+    addi $t0, $t0, -16
+    li $t8, 256
+    bne $t9, 8, loop_two
+    li $t8, -4
+    bne $t9, 12, loop_two
+    li $t8, 256
+    bne $t9, 16, loop_two
+    li $t8, 4
+    bne $t9, 20, loop_two
+    j exit
+    
 # grid creation
 increment:
     addi $t2, $t2, 8
@@ -124,30 +273,35 @@ fill:
     li $t5, 0x0000ff         # $t5 = color
     li $a0, 2    # x coordinate of the tetromino's base point on the grid 
     li $a1, 2    # y coordinate of the tetromino's base point on the grid
-    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino  # Address of the T Tetromino data\
+    lw $a2, 0($a2)
     j draw_tetromino
     # j move_tetromino
 draw_tetromino:
     li $t5, 0x0000ff         # $t5 = color
-    la $a2, Straight_Tetromino  # Address of the T Tetromino data
-    li $a3, 8   # Load the size of the tetromino (2 x number of squares)
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+    li $a3, 4   # Load the size of the tetromino (2 x number of squares)
 draw_square_loop:
-    lw $t2, 0($a2)         # Load x offset of the current square
-    lw $t3, 0($a2)         # Load y offset of the current square
-    
-    srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
+    lw $t8, 0($a2)         # Load x offset of the current square
+    lw $t9, 4($a2)         # Load y offset of the current square
+    # li $v0, 1
+    # syscall
+    # j exit
+    # srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
     add $a0, $a0, $t8     # Add it to $a0
-    andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
+    # andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
     add $a1, $a1, $t9     # Add it to $a1
     jal fill_square        # Draw the square
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
-    addi $a2, $a2, 4
+    addi $a2, $a2, 8
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, draw_square_loop  # If there are more squares, continue the loop
 move_tetromino:
-    la $a2, Straight_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
     lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t0)                  # Load first word from keyboard
     beq $t8, 1, keyboard     # If first word 1, key is pressed
@@ -155,52 +309,50 @@ move_tetromino:
 
 draw_tetromino_and_new:
     li $t5, 0x0000ff         # $t5 = color
-    la $a2, Straight_Tetromino  # Address of the T Tetromino data
-    li $a3, 8   # Load the size of the tetromino (2 x number of squares)
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+    li $a3, 4   # Load the size of the tetromino (2 x number of squares)
 draw_square_loop_and_new:
-    lw $t2, 0($a2)         # Load x offset of the current square
-    lw $t3, 0($a2)         # Load y offset of the current square
-    
-    srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
+    lw $t8, 0($a2)         # Load x offset of the current square
+    lw $t9, 4($a2)         # Load y offset of the current square
+    # li $v0, 1
+    # syscall
+    # j exit
+    # srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
     add $a0, $a0, $t8     # Add it to $a0
-    andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
+    # andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
     add $a1, $a1, $t9     # Add it to $a1
     jal fill_square        # Draw the square
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
-    addi $a2, $a2, 4
+    addi $a2, $a2, 8
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, draw_square_loop_and_new  # If there are more squares, continue the loop
     j check_for_lines_init
     
 delete_tetromino:
-    la $a2, Straight_Tetromino  # Address of the T Tetromino data
-    li $a3,8   # Load the size of the tetromino (2 x number of squares)
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+    li $a3,4   # Load the size of the tetromino (2 x number of squares)
 delete_square_loop:
-    lw $t2, 0($a2)         # Load x offset of the current square
-    lw $t3, 0($a2)         # Load y offset of the current square
-    
-    srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
+    lw $t8, 0($a2)         # Load x offset of the current square
+    lw $t9, 4($a2)         # Load y offset of the current square
+    # li $v0, 1
+    # syscall
+    # j exit
+    # srl $t8, $t2, 16      # Shift right logical to get the high half in the low half
     add $a0, $a0, $t8     # Add it to $a0
-    andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
+    # andi $t9, $t3, 0xFFFF # Mask the high half to get only the low half
     add $a1, $a1, $t9     # Add it to $a1
-    jal delete_square
+    jal delete_square        # Draw the square
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
-    addi $a2, $a2, 4
+    addi $a2, $a2, 8
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, delete_square_loop  # If there are more squares, continue the loop
     j keyboard_input
-start:
-    # j fill_square
-    # Load the color to a temporary register
-    li $t5, 0x0000ff         # $t5 = color
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
-    lw $t8, 0($t0)                  # Load first word from keyboard
-    beq $t8, 1, keyboard_input      # If first word 1, key is pressed
-    b start
 
 check_collision_w:
     addi $a1, $a1, -4
@@ -218,6 +370,7 @@ check_collision_w:
     j init_move
 check_collision_a:
     addi $a0, $a0, -1
+    addi $a1, $a1, 3
     sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
     sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
     lw $t2, ADDR_DSPL
@@ -227,6 +380,7 @@ check_collision_a:
     mul $t4, $t4, 4       # multiply by 4
     add $t2, $t2, $t4     # $t2 = starting address for the square
     lw $s0, 0($t2)             # Load the color at current address
+    addi $a1, $a1, -3
     addi $a0, $a0, 1
     beq $s0, 0x0000ff, move_tetromino # If color does not match, go to next 
 
@@ -248,6 +402,7 @@ check_collision_s:
     j init_move
 check_collision_d:
     addi $a0, $a0, 1
+    addi $a1, $a1, 3
     sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
     sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
     lw $t2, ADDR_DSPL
@@ -258,8 +413,7 @@ check_collision_d:
     add $t2, $t2, $t4     # $t2 = starting address for the square
     lw $s0, 0($t2)             # Load the color at current address
     addi $a0, $a0, -1
-    li $v0, 1
-    syscall
+    addi $a1, $a1, -3
     beq $s0, 0x0000ff, move_tetromino # If color does not match, go to next 
     j init_move
     
@@ -274,7 +428,7 @@ keyboard:
     beq $t8, 0x61, check_collision_a
     beq $t8, 0x73, check_collision_s
     beq $t8, 0x64, check_collision_d
-    beq $t8, 0x65, init_move
+    # beq $t8, 0x65, init_move
     j init_move
 
 init_move:
@@ -299,19 +453,34 @@ keyboard_input:
 key_x_pressed:
     j move_tetromino
 key_w_pressed:
-    addi $a1, $a1, -1
-    bne $a1, 1, draw_tetromino
-    li $a1, 2
+    # addi $a1, $a1, -1
+    # bne $a1, 1, draw_tetromino
+    # li $a1, 2
+    # j draw_tetromino
+    
+    # need to do rotation instead 
+    # obtain rotation from data
+    # draw it
+    lw $a2, 32($a2)
+    # la $a2, $a2
+    la $s0, Current_Tetromino
+    sw $a2, 0($s0)
+    
     j draw_tetromino
+    
 key_a_pressed:
     addi $a0, $a0, -1
     bne $a0, 1, draw_tetromino
     li $a0, 2
     j draw_tetromino
 key_s_pressed:
-    addi $a1, $a1, 1
-    bne $a1, 11, draw_tetromino
-    li $a1, 10
+    # addi $a1, $a1, 1
+    # bne $a1, 11, draw_tetromino
+    # li $a1, 10
+    lw $a2, 36($a2)
+    # la $a2, $a2
+    la $s0, Current_Tetromino
+    sw $a2, 0($s0)
     j draw_tetromino
 key_d_pressed:
     addi $a0, $a0, 1
@@ -319,37 +488,61 @@ key_d_pressed:
     li $a0, 13
     j draw_tetromino
 return_pressed:
-    j find_row
+    j find_row_init
 key_q_pressed:
     j exit
 
-    
+
+find_row_init:
+    la $a2, Current_Tetromino
+    lw $a2, 0($a2)
+    addi $a2, $a2, 32
+    li $t6, 0 # count
+    li $t8, 14
+    li $t3, 0
 find_row:
-    la $a2, Straight_Tetromino
-    lw $t9, 32($a2)
+    beq $t6, 4, finish
+    
+    # need to loop through every 32 + 8 bytes and identify highest row
+    lw $t9, 0($a2)
+    lw $t7, 4($a2)
+    # add s0 to t9 since height + start index = position
+    add $t9, $t9, $t7
     add $a1, $a1, $t9
-    # we start looking at t1
+    sub $a1, $a1, $t3
+    add $a0, $a0, $t6
+    li $t3, 0
     j check_square
 next_row:
     beq $a1, 14, found_row
+    addi $t3, $t3, 1
     addi $a1, $a1, 1
-    j check_square                # Repeat for the next row
 check_square:
     sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
     sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
+    mul $t4, $t1, 64     # $t4 = y * width of display (row offset)
     add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
     mul $t4, $t4, 4       # multiply by 4
     add $t2, $t2, $t4     # $t2 = starting address for the square
     lw $s0, 0($t2)             # Load the color at current address
     bne $s0, 0x0000ff, next_row # If color does not match, go to next row
 found_row:
+    sub $a0, $a0, $t6
     sub $a1, $a1, $t9
-    # need to first remove rows
+    addi $t6, $t6, 1
+    addi $a2, $a2, 8
+    slt $s0, $a1, $t8
+    bnez $s0, set_new
+    j find_row
+set_new:
+    # new lowest
+    move $t8, $a1
+    j find_row
+finish:
+    move $a1, $t8
     j draw_tetromino_and_new
-
+    
 check_for_lines_init:
     li $a1, 2
     addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
@@ -386,7 +579,6 @@ check:
     j check
 remove_row:
     li $a0, 1
-    la $a2, Line  # Address of the T Tetromino data
 remove_row_loop: 
     addi $a0, $a0, 1     # Add it to $a0 
     jal delete_square
