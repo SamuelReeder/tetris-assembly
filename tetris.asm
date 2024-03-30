@@ -45,16 +45,218 @@ Straight_Tetromino_Horizontal:
     .word 1, 0 # height and start index of third column
     .word 1, 0 # height and start index of fourth column
     .word Straight_Tetromino, Straight_Tetromino
-L_Tetromino:
+Square_Tetromino:
     .word 0, 0
-    .word 0, 1 
-    .word 0, 2
+    .word 1, 0
+    .word 0, 1
+    .word 1, 1
+    .word 2, 0  # Height and start index of first column
+    .word 2, 1  # Height and start index of second column
+    .word 0, 0  # Height and start index of third column (unused)
+    .word 0, 0  # Height and start index of fourth column (unused)
+    .word Square_Tetromino, Square_Tetromino  # Reference to itself (rotation does not change shape)
+# Default (Spawn) Orientation
+T_Tetromino:
+    .word 1, 0  # Bottom of T
+    .word 0, 1  # Left of T
+    .word 1, 1  # Center of T
+    .word 2, 1  # Right of T
+    .word 1, 0  # Column heights and start indices for the first column
+    .word 2, 1  # Column heights and start indices for the second column
+    .word 1, 2  # Column heights and start indices for the third column
+    .word 0, 0  # Unused column
+    .word T_Tetromino_Left, T_Tetromino_Right
+
+# Left Rotation
+T_Tetromino_Left:
+    .word 0, 1
+    .word 1, 0
+    .word 1, 1
     .word 1, 2
-    .word 3, 0 # height and start index of first column
-    .word 1, 2 # height and start index of second column
-    .word 0, 0 # height and start index of third column
-    .word 0, 0 # height and start index of fourth column
-    .word L_Tetromino_L, L_Tetromino_R
+    .word 1, 0  # Column heights and start indices for the first column
+    .word 3, 1  # Column heights and start indices for the second column, taller part of T
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word T_Tetromino_Upside_Down, T_Tetromino
+
+# Right Rotation
+T_Tetromino_Right:
+    .word 1, 0
+    .word 1, 1
+    .word 1, 2
+    .word 2, 1
+    .word 3, 0  # This column is the tall part of T
+    .word 1, 1  # Column heights and start indices
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word T_Tetromino, T_Tetromino_Upside_Down
+
+# Upside-Down Rotation
+T_Tetromino_Upside_Down:
+    .word 0, 0
+    .word 1, 0
+    .word 2, 0
+    .word 1, 1
+    .word 1, 0  # Column heights and start indices for the first column
+    .word 2, 1  # Column heights and start indices for the second column
+    .word 1, 2  # Column heights and start indices for the third column
+    .word 0, 0  # Unused column
+    .word T_Tetromino_Right, T_Tetromino_Left
+
+# Default (Spawn) Orientation
+S_Tetromino:
+    .word 1, 0  # Bottom left of S
+    .word 2, 0  # Bottom right of S
+    .word 0, 1  # Top left of S
+    .word 1, 1  # Top right of S
+    .word 2, 0  # Column heights and start indices for the first column
+    .word 2, 1  # Column heights and start indices for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word S_Tetromino_Vertical, S_Tetromino_Vertical  # Rotated references
+
+# Rotated (Vertical) Orientation
+S_Tetromino_Vertical:
+    .word 0, 1
+    .word 0, 2
+    .word 1, 0
+    .word 1, 1
+    .word 2, 0  # Column heights and start indices for the first column, taller part of S
+    .word 2, 1  # Column heights and start indices for the second column, taller part of S
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word S_Tetromino, S_Tetromino  # Back to default orientation
+
+# Default (Spawn) Orientation
+Z_Tetromino:
+    .word 0, 0  # Bottom left of Z
+    .word 1, 0  # Bottom middle of Z
+    .word 1, 1  # Top middle of Z
+    .word 2, 1  # Top right of Z
+    .word 2, 0  # Column heights and start index for the first column
+    .word 2, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word Z_Tetromino_Vertical, Z_Tetromino_Vertical  # Rotated references
+
+# Rotated (Vertical) Orientation
+Z_Tetromino_Vertical:
+    .word 1, 0
+    .word 1, 1
+    .word 0, 1
+    .word 0, 2
+    .word 2, 0  # Column heights and start index for the first column, taller part of Z
+    .word 2, 1  # Column heights and start index for the second column, taller part of Z
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word Z_Tetromino, Z_Tetromino  # Back to default orientation
+
+# Default (Spawn) Orientation
+J_Tetromino:
+    .word 1, 0  # Bottom of J
+    .word 1, 1  # Middle of J
+    .word 1, 2  # Top of J
+    .word 0, 2  # Left of J
+    .word 3, 0  # Column heights and start index for the first column
+    .word 1, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word J_Tetromino_Left, J_Tetromino_Right
+
+# Left Rotation
+J_Tetromino_Left:
+    .word 0, 1
+    .word 1, 1
+    .word 2, 1
+    .word 2, 2
+    .word 1, 0  # Column heights and start index for the first column
+    .word 1, 1  # Column heights and start index for the second column
+    .word 2, 2  # Column heights and start index for the third column
+    .word 0, 0
+    .word J_Tetromino_Upside_Down, J_Tetromino
+
+# Right Rotation
+J_Tetromino_Right:
+    .word 0, 1
+    .word 1, 1
+    .word 0, 0
+    .word 0, 2
+    .word 2, 0  # Column heights and start index for the first column
+    .word 2, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word J_Tetromino, J_Tetromino_Upside_Down
+
+# Upside-Down (180°) Rotation
+J_Tetromino_Upside_Down:
+    .word 0, 0
+    .word 1, 0
+    .word 1, 1
+    .word 1, 2
+    .word 1, 0  # Column heights and start index for the first column
+    .word 3, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word J_Tetromino_Right, J_Tetromino_Left
+
+# Default (Spawn) Orientation
+L_Tetromino:
+    .word 0, 0  # Bottom of L
+    .word 0, 1  # Middle of L
+    .word 0, 2  # Top of L
+    .word 1, 2  # Right of L
+    .word 3, 0  # Column heights and start index for the first column
+    .word 1, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word L_Tetromino_Left, L_Tetromino_Right
+
+# Left Rotation
+L_Tetromino_Left:
+    .word 0, 1
+    .word 1, 1
+    .word 2, 1
+    .word 0, 0
+    .word 1, 0  # Column heights and start index for the first column
+    .word 1, 1  # Column heights and start index for the second column
+    .word 2, 2  # Column heights and start index for the third column
+    .word 0, 0
+    .word L_Tetromino_Upside_Down, L_Tetromino
+
+# Right Rotation
+L_Tetromino_Right:
+    .word 1, 0
+    .word 1, 1
+    .word 0, 0
+    .word 1, 2
+    .word 2, 0  # Column heights and start index for the first column
+    .word 2, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word L_Tetromino, L_Tetromino_Upside_Down
+
+# Upside-Down (180°) Rotation
+L_Tetromino_Upside_Down:
+    .word 1, 0
+    .word 1, 1
+    .word 1, 2
+    .word 0, 0
+    .word 1, 0  # Column heights and start index for the first column
+    .word 3, 1  # Column heights and start index for the second column
+    .word 0, 0  # Unused columns
+    .word 0, 0
+    .word L_Tetromino_Right, L_Tetromino_Left
+
+# L_Tetromino:
+    # .word 0, 0
+    # .word 0, 1 
+    # .word 0, 2
+    # .word 1, 2
+    # .word 3, 0 # height and start index of first column
+    # .word 1, 2 # height and start index of second column
+    # .word 0, 0 # height and start index of third column
+    # .word 0, 0 # height and start index of fourth column
+    # .word L_Tetromino_L, L_Tetromino_R
 # store rotations for each tetromino and easily draw them
 L_Tetromino_R:
     .word 0, 0
@@ -86,46 +288,29 @@ L_Tetromino_D:
     .word 0, 0 # height and start index of third column
     .word 0, 0 # height and start index of fourth column
     .word L_Tetromino_R, L_Tetromino_L
-Zig_Tetromino:
-    .word 0, 0
-    .word 0, 1
-    .word 1, 1
-    .word 1, 2
-    .word 2, 0 # height and start index of first column
-    .word 2, 1 # height and start index of second column
-    .word 0, 0 # height and start index of third column
-    .word 0, 0 # height and start index of fourth column
-    .word Zig_Tetromino_L, Zig_Tetromino_R
-Zig_Tetromino_L:
-    .word 0, 0
-    .word 1, 0
-    .word 1, 1
-    .word 2, 1
-    .word 1, 0 # height and start index of first column
-    .word 2, 0 # height and start index of second column
-    .word 1, 1 # height and start index of third column
-    .word 0, 0 # height and start index of fourth column
-    .word L_Tetromino, Zig_Tetromino_D
-Zig_Tetromino_R:
-    .word 0, 1
-    .word 1, 1
-    .word 1, 0
-    .word 2, 0
-    .word 1, 1 # height and start index of first column
-    .word 2, 0 # height and start index of second column
-    .word 1, 0 # height and start index of third column
-    .word 0, 0 # height and start index of fourth column
-    .word Zig_Tetromino_D, Zig_Tetromino
-Zig_Tetromino_D:
-    .word 1, 0
-    .word 1, 1
-    .word 0, 1
-    .word 0, 2
-    .word 2, 1 # height and start index of first column
-    .word 2, 0 # height and start index of second column
-    .word 0, 0 # height and start index of third column
-    .word 0, 0 # height and start index of fourth column
-    .word L_Tetromino_R, L_Tetromino_L
+Colors:
+    .word 0x00FFFF
+    .word 0xFFFF00
+    .word 0x800080
+    .word 0x00FF00
+    .word 0xFF0000
+    .word 0x0000FF
+    .word 0xFFA500
+
+    # I (Straight) Piece: Cyan or light blue
+    # O (Square) Piece: Yellow
+    # T (T-piece) Piece: Purple
+    # S (Snake) Piece: Green
+    # Z (Reverse Snake) Piece: Red
+    # J (L-shaped) Piece: Blue
+    # L (Reverse L-shaped) Piece: Orange
+        # Cyan/Light Blue: #00FFFF
+    # Yellow: #FFFF00
+    # Purple: #800080
+    # Green: #00FF00
+    # Red: #FF0000
+    # Blue: #0000FF
+    # Orange: #FFA500
 
 
 
@@ -134,7 +319,7 @@ Zig_Tetromino_D:
 # Mutable Data
 ##############################################################################
 Current_Tetromino:
-    .word L_Tetromino    # This contains the address of L_Tetromino
+    .word Straight_Tetromino    # This contains the address of L_Tetromino
 
 ##############################################################################
 # Code
@@ -151,6 +336,12 @@ main:
     li $t8 0 # for keeping track of colour row-wise
     li $t6, 4              # $t6 = 4 for dividing $t3 by 4   
     li $t8, 64
+    li $t5, 0
+    addi $sp, $sp, -4
+    sw $t5, 0($sp)
+    # lw $a3, 0($sp)
+    # addi $sp, $sp, 4
+    
     # j score
 setup_loop:
     beq $t2, 3064, fill    # 4096 - 1024 - 8 (margin)
@@ -278,7 +469,7 @@ fill:
     j draw_tetromino
     # j move_tetromino
 draw_tetromino:
-    li $t5, 0x0000ff         # $t5 = color
+    jal get_color
     la $a2, Current_Tetromino  # Address of the T Tetromino data
     lw $a2, 0($a2)
     li $a3, 4   # Load the size of the tetromino (2 x number of squares)
@@ -355,19 +546,42 @@ delete_square_loop:
     j keyboard_input
 
 check_collision_w:
-    addi $a1, $a1, -4
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+    lw $a2, 64($a2)
+    li $t7, 0
+loop_w:
+    lw $t0, 0($a2)
+    lw $t1, 4($a2)
+    add $a0, $a0, $t0
+    add $a1, $a1, $t1
+    li $v0, 1
+    syscall
+
+
+    sll $t8, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t9, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
+    mul $t4, $t9, 64    # $t4 = y * width of display (row offset)
+    add $t4, $t4, $t8     # $t4 = row offset + x (final pixel offset)\
     mul $t4, $t4, 4       # multiply by 4
     add $t2, $t2, $t4     # $t2 = starting address for the square
     lw $s0, 0($t2)             # Load the color at current address
-    addi $a1, $a1, 4
-    beq $s0, 0x0000ff, move_tetromino # If color does not match, go to next 
-    j init_move
+    
+    sub $a0, $a0, $t0
+    sub $a1, $a1, $t1
+    
+    
+    addi $t7, $t7, 1
+    addi $a2, $a2, 8
+    
+    # beq $s0, 0x0000ff, move_tetromino
+    beq $s0, 0x000000, move_tetromino
+    beq $t7, 4, init_move
+    
+    j loop_w
+    
+    
 check_collision_a:
     addi $a0, $a0, -1
     addi $a1, $a1, 3
@@ -386,20 +600,37 @@ check_collision_a:
 
     j init_move
 check_collision_s:
-    addi $a1, $a1, 4
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+    lw $a2, 68($a2)
+    li $t7, 0
+loop_s:
+    lw $t0, 0($a2)
+    lw $t1, 4($a2)
+    add $a0, $a0, $t0
+    add $a1, $a1, $t1
+
+    sll $t8, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t9, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
+    mul $t4, $t9, 64    # $t4 = y * width of display (row offset)
+    add $t4, $t4, $t8     # $t4 = row offset + x (final pixel offset)\
     mul $t4, $t4, 4       # multiply by 4
     add $t2, $t2, $t4     # $t2 = starting address for the square
     lw $s0, 0($t2)             # Load the color at current address
-    addi $a1, $a1, -4
-    beq $s0, 0x0000ff, move_tetromino # If color does not match, go to next 
+    
+    sub $a0, $a0, $t0
+    sub $a1, $a1, $t1
+    addi $t7, $t7, 1
+    addi $a2, $a2, 8
+    
 
-    j init_move
+    
+    # beq $s0, 0x0000ff, move_tetromino
+    beq $s0, 0x000000, move_tetromino
+    beq $t7, 4, init_move
+    
+    j loop_s
 check_collision_d:
     addi $a0, $a0, 1
     addi $a1, $a1, 3
@@ -428,30 +659,60 @@ keyboard:
     beq $t8, 0x61, check_collision_a
     beq $t8, 0x73, check_collision_s
     beq $t8, 0x64, check_collision_d
+    beq $t8, 0x78, pause # change to p
     # beq $t8, 0x65, init_move
     j init_move
 
 init_move:
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
     li $a3, 0
-    addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
-    sw $a3, 0($sp)     # Store the value from $t0 into the stack
     j delete_tetromino
 keyboard_input:
-    lw $a3, 0($sp)     # Load the value from the stack into $t0
-    addi $sp, $sp, 4   # Increment stack pointer to remove the value from the stack
-    
     lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
     lw $a3, 4($t0)
     beq $a3, 0x77, key_w_pressed
     beq $a3, 0x61, key_a_pressed
     beq $a3, 0x73, key_s_pressed
     beq $a3, 0x64, key_d_pressed
-    beq $a3, 0x78, key_x_pressed
     beq $a3, 0x65, return_pressed
     beq $a3, 0x71, key_q_pressed
     b move_tetromino
-key_x_pressed:
+pause:
+    li $t8, 0
+    li $t5, 0xffffff         # $t5 = color
+    lw $t2, ADDR_DSPL
+    jal make_pause
+    j pause_loop
+make_pause:
+    addi $t2, $t2, 256
+    sw $t5, 120($t2)
+    sw $t5, 124($t2)
+    sw $t5, 132($t2)
+    sw $t5, 136($t2)
+    addi $t8, $t8, 1
+    bne $t8, 6, make_pause
+    jr $ra
+    
+
+pause_loop:
+    # la $a2, Current_Tetromino  # Address of the T Tetromino data
+    # lw $a2, 0($a2)
+    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+    lw $t8, 0($t0)                  # Load first word from keyboard
+    beq $t8, 1, check_pause     # If first word 1, key is pressed
+    j pause_loop
+check_pause:
+    lw $t8, 4($t0)   
+    beq $t8, 0x78, unpause
+    j pause
+unpause:
+    li $t8, 0
+    li $t5, 0x0000000        # $t5 = color
+    lw $t2, ADDR_DSPL
+    jal make_pause
     j move_tetromino
+    
 key_w_pressed:
     # addi $a1, $a1, -1
     # bne $a1, 1, draw_tetromino
@@ -658,6 +919,14 @@ colour_dark:
 colour_light:
     li $t5, 0x424242
     j fill_square
+
+get_color:
+    lw $t5, 0($sp)
+    mul $t5, $t5, 4
+    la $s1, Colors
+    add $s1, $s1, $t5
+    lw $t5, 0($s1)
+    jr $ra
     
 exit:
     li $v0, 10              # terminate the program gracefully
