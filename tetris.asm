@@ -591,70 +591,43 @@ loop_s:
     beq $t7, 4, init_move
     
     j loop_s
-# check_collision_d:
-    # addi $a0, $a0, 1
-    # addi $a1, $a1, 3
-    # sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    # sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
-    # lw $t2, ADDR_DSPL
-    # li $t3, 64            # $t3 = width of the display in pixels
-    # mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    # add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    # mul $t4, $t4, 4       # multiply by 4
-    # add $t2, $t2, $t4     # $t2 = starting address for the square
-    # lw $s0, 0($t2)             # Load the color at current address
-    # addi $a0, $a0, -1
-    # addi $a1, $a1, -3
-    # beq $s0, 0x00FFFF, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0xFFFF00, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0x800080, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0x00FF00, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0xFF0000, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0x0000FF, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0xFFA500, move_tetromino # If color does not match, go to next 
-    # beq $s0, 0x000000, move_tetromino # If color does not match, go to next 
-    # j init_move
+
 check_collision_d:
     li $t7, 0
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino
     lw $a2, 0($a2)
 loop_d:
-    # for each piece, sub 1 from x and see if black or colour, then exit
-    # otherwise, proceed after 4
     lw $s0, 0($a2)
     lw $s1, 4($a2)
     addi $s0, $s0, 1
     add $a0, $a0, $s0
     add $a1, $a1, $s1
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t0, $a0, 2      
+    sll $t1, $a1, 2      
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $t3, 0($t2)             # Load the color at current address
+    li $t3, 64         
+    mul $t4, $t1, $t3    
+    add $t4, $t4, $t0     
+    mul $t4, $t4, 4  
+    add $t2, $t2, $t4   
+    lw $t3, 0($t2)       
     sub $a0, $a0, $s0
     sub $a1, $a1, $s1
-    beq $t3, 0x00FFFF, move_tetromino # If color does not match, go to next 
-    beq $t3, 0xFFFF00, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x800080, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x00FF00, move_tetromino # If color does not match, go to next 
-    beq $t3, 0xFF0000, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x0000FF, move_tetromino # If color does not match, go to next 
-    beq $t3, 0xFFA500, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x000000, move_tetromino # If color does not match, go to next 
+    beq $t3, 0x00FFFF, move_tetromino  
+    beq $t3, 0xFFFF00, move_tetromino 
+    beq $t3, 0x800080, move_tetromino 
+    beq $t3, 0x00FF00, move_tetromino 
+    beq $t3, 0xFF0000, move_tetromino
+    beq $t3, 0x0000FF, move_tetromino
+    beq $t3, 0xFFA500, move_tetromino 
+    beq $t3, 0x000000, move_tetromino 
     beq $t7, 4, init_move
     addi $a2, $a2, 8
     addi $t7, $t7, 1
     j loop_d
-    
 
 keyboard:
-    # li $v0, 1
-    # syscall
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+    lw $t0, ADDR_KBRD    
     lw $t8, 4($t0)
     beq $t8, 0x71, exit
     beq $t8, 0x77, check_collision_w
@@ -666,12 +639,12 @@ keyboard:
     j init_move
 
 init_move:
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino
     lw $a2, 0($a2)
     li $a3, 0
     j delete_tetromino
 keyboard_input:
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
+    lw $t0, ADDR_KBRD       
     lw $a3, 4($t0)
     beq $a3, 0x77, key_w_pressed
     beq $a3, 0x61, key_a_pressed
@@ -698,11 +671,9 @@ make_pause:
     
 
 pause_loop:
-    # la $a2, Current_Tetromino  # Address of the T Tetromino data
-    # lw $a2, 0($a2)
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
-    lw $t8, 0($t0)                  # Load first word from keyboard
-    beq $t8, 1, check_pause     # If first word 1, key is pressed
+    lw $t0, ADDR_KBRD    
+    lw $t8, 0($t0)      
+    beq $t8, 1, check_pause
     j pause_loop
 check_pause:
     lw $t8, 4($t0)   
@@ -710,30 +681,23 @@ check_pause:
     j pause
 unpause:
     li $t8, 0
-    li $t5, 0x0000000        # $t5 = color
+    li $t5, 0x0000000
     lw $t2, ADDR_DSPL
     jal make_pause
     j move_tetromino
     
 key_w_pressed:
     lw $a2, 32($a2)
-    # la $a2, $a2
     la $s0, Current_Tetromino
     sw $a2, 0($s0)
-    
     j draw_tetromino
-    
 key_a_pressed:
     addi $a0, $a0, -1
     bne $a0, 1, draw_tetromino
     li $a0, 2
     j draw_tetromino
 key_s_pressed:
-    # addi $a1, $a1, 1
-    # bne $a1, 11, draw_tetromino
-    # li $a1, 10
     lw $a2, 36($a2)
-    # la $a2, $a2
     la $s0, Current_Tetromino
     sw $a2, 0($s0)
     j draw_tetromino
@@ -757,12 +721,9 @@ find_row_init:
     li $t3, 0
 find_row:
     beq $t6, 4, finish
-    
-    # need to loop through every 32 + 8 bytes and identify highest row
     lw $t9, 0($a2)
     lw $t7, 4($a2)
     beq $t9, 0, finish
-    # add s0 to t9 since height + start index = position
     add $t9, $t9, $t7
     add $a1, $a1, $t9
     sub $a1, $a1, $t3
@@ -774,22 +735,21 @@ next_row:
     addi $t3, $t3, 1
     addi $a1, $a1, 1
 check_square:
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t0, $a0, 2
+    sll $t1, $a1, 2
     lw $t2, ADDR_DSPL
-    mul $t4, $t1, 64     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $s0, 0($t2)             # Load the color at current address
-    beq $s0, 0x00FFFF, found_row # If color does not match, go to next 
-    beq $s0, 0xFFFF00, found_row # If color does not match, go to next 
-    beq $s0, 0x800080, found_row # If color does not match, go to next 
-    beq $s0, 0x00FF00, found_row # If color does not match, go to next 
-    beq $s0, 0xFF0000, found_row # If color does not match, go to next 
-    beq $s0, 0x0000FF, found_row # If color does not match, go to next 
-    beq $s0, 0xFFA500, found_row # If color does not match, go to next 
-    # beq $s0, 0x000000, found_row # If color does not match, go to next 
+    mul $t4, $t1, 64
+    add $t4, $t4, $t0 
+    mul $t4, $t4, 4
+    add $t2, $t2, $t4
+    lw $s0, 0($t2)     
+    beq $s0, 0x00FFFF, found_row 
+    beq $s0, 0xFFFF00, found_row 
+    beq $s0, 0x800080, found_row 
+    beq $s0, 0x00FF00, found_row 
+    beq $s0, 0xFF0000, found_row 
+    beq $s0, 0x0000FF, found_row
+    beq $s0, 0xFFA500, found_row 
     j next_row
 found_row:
     sub $a0, $a0, $t6
@@ -800,7 +760,6 @@ found_row:
     bnez $s0, set_new
     j find_row
 set_new:
-    # new lowest
     move $t8, $a1
     j find_row
 finish:
@@ -809,40 +768,40 @@ finish:
     
 check_for_lines_init:
     li $a1, 2
-    addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
+    addi $sp, $sp, -4
     sw $a1, 0($sp)   
 check_for_lines:
-    lw $a1, 0($sp)     # Load the value from the stack into $t0
-    addi $sp, $sp, 4   # Increment stack pointer to remove the value from the stack
+    lw $a1, 0($sp)
+    addi $sp, $sp, 4
     beq $a1, 15, fill
     addi $a1, $a1, 1
-    addi $sp, $sp, -4  # Decrement stack pointer to make room for the value
+    addi $sp, $sp, -4
     sw $a1, 0($sp)  
     addi $a1, $a1, -1
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
+    li $t3, 64       
 new_row:
     beq $a1, 15, fill
     li $a0, 2
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
+    li $t3, 64    
     addi $a1, $a1, 1
     li $t9, 0
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high).
-    mult $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)
-    mult $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
+    sll $t0, $a0, 2 
+    sll $t1, $a1, 2 
+    mult $t4, $t1, $t3
+    add $t4, $t4, $t0
+    mult $t4, $t4, 4   
+    add $t2, $t2, $t4 
 check:
-    lw $s0, 0($t2)             # Load the color at current address 
-    beq $s0, 0x00FFFF, check_new # If color does not match, go to next 
-    beq $s0, 0xFFFF00, check_new # If color does not match, go to next 
-    beq $s0, 0x800080, check_new # If color does not match, go to next 
-    beq $s0, 0x00FF00, check_new # If color does not match, go to next 
-    beq $s0, 0xFF0000, check_new # If color does not match, go to next 
-    beq $s0, 0x0000FF, check_new # If color does not match, go to next 
-    beq $s0, 0xFFA500, check_new # If color does not match, go to next 
+    lw $s0, 0($t2)        
+    beq $s0, 0x00FFFF, check_new 
+    beq $s0, 0xFFFF00, check_new  
+    beq $s0, 0x800080, check_new
+    beq $s0, 0x00FF00, check_new 
+    beq $s0, 0xFF0000, check_new
+    beq $s0, 0x0000FF, check_new
+    beq $s0, 0xFFA500, check_new
     # beq $s0, 0x000000, check_new # If color does not match, go to next 
     j new_row
 check_new:
@@ -853,32 +812,32 @@ check_new:
 remove_row:
     li $a0, 1
 remove_row_loop: 
-    addi $a0, $a0, 1     # Add it to $a0 
+    addi $a0, $a0, 1
     jal delete_square
-    bne $a0, 13 remove_row_loop  # If there are more squares, continue the loop
+    bne $a0, 13 remove_row_loop  
 shift_down:
     beq $a1, 2, check_for_lines
     li $a0, 2
     addi $a1, $a1, -1
 check_square_new:
     beq $a0, 14, shift_down
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t0, $a0, 2       
+    sll $t1, $a1, 2   
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $s0, 0($t2)             # Load the color at current address
+    li $t3, 64      
+    mul $t4, $t1, $t3
+    add $t4, $t4, $t0
+    mul $t4, $t4, 4   
+    add $t2, $t2, $t4
+    lw $s0, 0($t2)  
     addi $a0, $a0, 1
-    beq $s0, 0x00FFFF, delete_and_new # If color does not match, go to next 
-    beq $s0, 0xFFFF00, delete_and_new # If color does not match, go to next 
-    beq $s0, 0x800080, delete_and_new # If color does not match, go to next 
-    beq $s0, 0x00FF00, delete_and_new # If color does not match, go to next 
-    beq $s0, 0xFF0000, delete_and_new # If color does not match, go to next 
-    beq $s0, 0x0000FF, delete_and_new # If color does not match, go to next 
-    beq $s0, 0xFFA500, delete_and_new # If color does not match, go to next 
+    beq $s0, 0x00FFFF, delete_and_new 
+    beq $s0, 0xFFFF00, delete_and_new 
+    beq $s0, 0x800080, delete_and_new 
+    beq $s0, 0x00FF00, delete_and_new 
+    beq $s0, 0xFF0000, delete_and_new
+    beq $s0, 0x0000FF, delete_and_new 
+    beq $s0, 0xFFA500, delete_and_new 
     # beq $s0, 0x000000, delete_and_new # If color does not match, go to next 
     j check_square_new
 delete_and_new:
