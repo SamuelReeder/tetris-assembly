@@ -277,6 +277,8 @@ Tetrominos:
 Current_Tetromino:
     .word Straight_Tetromino    # This contains the address of L_Tetromino
     .word -1
+Gravity_Speed:
+    .word 5000000
 
 ##############################################################################
 # Code
@@ -293,6 +295,7 @@ main:
     li $t6, 4              # $t6 = 4 for dividing $t3 by 4   
     li $t8, 64
     li $t5, 0
+    li $t1, 0
 setup_loop:
     beq $t2, 3064, fill    # 4096 - 1024 - 8 (margin)
     div $t2, $t8
@@ -436,13 +439,91 @@ draw_square_loop:
     addi $a2, $a2, 8
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, draw_square_loop  # If there are more squares, continue the loop
+    
+# move_tetromino:
+    # li $t1, 0
 move_tetromino:
+    la $a2, Current_Tetromino
+    lw $a2, 0($a2)
+    lw $t0, ADDR_KBRD   
+    lw $t8, 0($t0)       
+    beq $t8, 1, keyboard
+    addi $t1, $t1, 1
+    la $t2, Gravity_Speed
+    lw $t2, 0($t2)
+    beq $t1, $t2, check_collision_gravity
+    
+    j move_tetromino
+gravity:
+    j delete_tetromino_other
+gravity_draw:
+    la $t2, Gravity_Speed
+    lw $t0, 0($t2)     # Load the number into register $t0
+    li $t1, 99         # Load the constant 75 into register $t1
+    
+    mult $t0, $t1      # Multiply the number by 75
+    mflo $t3           # Move the lower 32 bits of the product into $t2
+    
+    li $t4, 100        # Load the constant 100 into register $t3
+    div $t3, $t4       # Divide the result by 100
+    mflo $t5           # Move the quotient (result of division) into $t4
+    sw $t5, 0($t2)
+    addi $a1, $a1, 1
+    li $t1, 0
+    j draw_tetromino
+
+check_collision_gravity:
+    li $t7, 0
     la $a2, Current_Tetromino  # Address of the T Tetromino data
     lw $a2, 0($a2)
-    lw $t0, ADDR_KBRD               # $t0 = base address for keyboard
-    lw $t8, 0($t0)                  # Load first word from keyboard
-    beq $t8, 1, keyboard     # If first word 1, key is pressed
-    b move_tetromino
+loop_gravity:
+    # for each piece, sub 1 from x and see if black or colour, then exit
+    # otherwise, proceed after 4
+    lw $s0, 0($a2)
+    lw $s1, 4($a2)
+    addi $s1, $s1, 1
+    add $a0, $a0, $s0
+    add $a1, $a1, $s1
+    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    lw $t2, ADDR_DSPL
+    mul $t4, $t1, 64     # $t4 = y * width of display (row offset)
+    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
+    mul $t4, $t4, 4       # multiply by 4
+    add $t2, $t2, $t4     # $t2 = starting address for the square
+    lw $t3, 0($t2)             # Load the color at current address
+    sub $a0, $a0, $s0
+    sub $a1, $a1, $s1
+    beq $t3, 0x00FFFF, return_pressed # If color does not match, go to next 
+    beq $t3, 0xFFFF00, return_pressed # If color does not match, go to next 
+    beq $t3, 0x800080, return_pressed # If color does not match, go to next 
+    beq $t3, 0x00FF00, return_pressed # If color does not match, go to next 
+    beq $t3, 0xFF0000, return_pressed # If color does not match, go to next 
+    beq $t3, 0x0000FF, return_pressed # If color does not match, go to next 
+    beq $t3, 0xFFA500, return_pressed # If color does not match, go to next 
+    beq $t3, 0x000000, return_pressed # If color does not match, go to next 
+    beq $t7, 4, gravity
+    addi $a2, $a2, 8
+    addi $t7, $t7, 1
+    j loop_gravity
+    
+delete_tetromino_other:
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+    li $a3,4   # Load the size of the tetromino (2 x number of squares)
+delete_square_loop_other:
+    lw $t8, 0($a2)         # Load x offset of the current square
+    lw $t9, 4($a2)         # Load y offset of the current square
+    add $a0, $a0, $t8     # Add it to $a0
+    add $a1, $a1, $t9     # Add it to $a1
+    jal delete_square        # Draw the square
+
+    sub $a0, $a0, $t8      
+    sub $a1, $a1, $t9
+    addi $a2, $a2, 8
+    addi $a3, $a3, -1      # Decrement the counter
+    bnez $a3, delete_square_loop_other  # If there are more squares, continue the loop
+    j gravity_draw
 
 draw_tetromino_and_new:
     jal get_color
@@ -668,8 +749,6 @@ make_pause:
     addi $t8, $t8, 1
     bne $t8, 6, make_pause
     jr $ra
-    
-
 pause_loop:
     lw $t0, ADDR_KBRD    
     lw $t8, 0($t0)      
@@ -930,6 +1009,7 @@ reset_color:
     li $t6, -1
     sw $t6, 4($t5)
     j fill
+    # cl
     
 exit:
     li $v0, 10              # terminate the program gracefully
