@@ -423,6 +423,8 @@ fill:
     la $a2, Current_Tetromino  # Address of the T Tetromino data\
     lw $a2, 0($a2)
 draw_tetromino:
+    j check_placement
+finish_check:
     jal get_light_color
     la $a2, Current_Tetromino  # Address of the T Tetromino data
     lw $a2, 0($a2)
@@ -439,6 +441,43 @@ draw_square_loop:
     addi $a2, $a2, 8
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, draw_square_loop  # If there are more squares, continue the loop
+draw_five_next:
+    jal reset_next
+    li $t6, 0
+draw_next:
+    la $a2, Current_Tetromino
+    lw $a2, 4($a2)
+    add $a2, $a2, $t6
+    jal get_next
+    mul $a2, $a2, 4
+    la $t0, Tetrominos
+    add $t0, $t0, $a2
+    lw $a2, 0($t0)
+    li $t1, 0
+    li $t5, 0xffffff
+draw_next_loop:
+    # addi $t7, $t7, 1
+    lw $t2, ADDR_DSPL
+    li $t3, 1402
+    mul $t3, $t3, 4
+    add $t2, $t2, $t3
+    lw $t8, 0($a2)
+    lw $t9, 4($a2)
+    mul $t8, $t8, 4
+    add $t2, $t2, $t8
+    mul $t9, $t9, 256
+    add $t2, $t2, $t9
+    mul $t7, $t6, 1280
+    add $t2, $t2, $t7
+    sw $t5, 0($t2)
+    addi $t1, $t1, 1
+    addi $a2, $a2, 8
+    bne $t1, 4, draw_next_loop
+    # addi $t7, $t7, 1
+    # j draw_next
+    addi $t6, $t6, 1
+    bne $t6, 5, draw_next
+    
     
 # move_tetromino:
     # li $t1, 0
@@ -543,6 +582,52 @@ draw_square_loop_and_new:
     addi $a3, $a3, -1      # Decrement the counter
     bnez $a3, draw_square_loop_and_new  # If there are more squares, continue the loop
     j check_for_lines_init
+
+check_placement:
+    li $t7, 0
+    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    lw $a2, 0($a2)
+loop_placement:
+    lw $s0, 0($a2)
+    lw $s1, 4($a2)
+    add $a0, $a0, $s0
+    add $a1, $a1, $s1
+    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t1, $a1, 2      
+    lw $t2, ADDR_DSPL
+    mul $t4, $t1, 64
+    add $t4, $t4, $t0 
+    mul $t4, $t4, 4
+    add $t2, $t2, $t4
+    lw $t3, 0($t2)         
+    sub $a0, $a0, $s0
+    sub $a1, $a1, $s1
+    beq $t3, 0x00FFFF, gameover
+    beq $t3, 0xFFFF00, gameover 
+    beq $t3, 0x800080, gameover
+    beq $t3, 0x00FF00, gameover
+    beq $t3, 0xFF0000, gameover
+    beq $t3, 0x0000FF, gameover
+    beq $t3, 0xFFA500, gameover
+    beq $t3, 0x000000, gameover 
+    beq $t7, 4, finish_check # change
+    addi $a2, $a2, 8
+    addi $t7, $t7, 1
+    j loop_placement
+    
+gameover:
+    # la $a2, Current_Tetromino
+    # lw $a2, 0($a2)
+    lw $t0, ADDR_KBRD   
+    lw $t8, 0($t0)       
+    beq $t8, 1, gameover_keyboard
+    # beq $t8, 0x77, check_collision_w
+    
+    j gameover
+    
+gameover_keyboard:
+    lw $t8, 4($t0)
+    beq $t8, 0x71, main
     
 delete_tetromino:
     la $a2, Current_Tetromino  # Address of the T Tetromino data
@@ -572,8 +657,6 @@ loop_w:
     lw $t1, 4($a2)
     add $a0, $a0, $t0
     add $a1, $a1, $t1
-    li $v0, 1
-    syscall
     sll $t8, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
     sll $t9, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
     lw $t2, ADDR_DSPL
@@ -903,27 +986,29 @@ check_square_new:
     sll $t0, $a0, 2       
     sll $t1, $a1, 2   
     lw $t2, ADDR_DSPL
-    li $t3, 64      
-    mul $t4, $t1, $t3
+    mul $t4, $t1, 64
     add $t4, $t4, $t0
     mul $t4, $t4, 4   
     add $t2, $t2, $t4
-    lw $s0, 0($t2)  
+    lw $t2, 0($t2)  
     addi $a0, $a0, 1
-    beq $s0, 0x00FFFF, delete_and_new 
-    beq $s0, 0xFFFF00, delete_and_new 
-    beq $s0, 0x800080, delete_and_new 
-    beq $s0, 0x00FF00, delete_and_new 
-    beq $s0, 0xFF0000, delete_and_new
-    beq $s0, 0x0000FF, delete_and_new 
-    beq $s0, 0xFFA500, delete_and_new 
+    # changed registers
+    beq $t2, 0x00FFFF, delete_and_new 
+    beq $t2, 0xFFFF00, delete_and_new 
+    beq $t2, 0x800080, delete_and_new 
+    beq $t2, 0x00FF00, delete_and_new 
+    beq $t2, 0xFF0000, delete_and_new
+    beq $t2, 0x0000FF, delete_and_new 
+    beq $t2, 0xFFA500, delete_and_new 
     # beq $s0, 0x000000, delete_and_new # If color does not match, go to next 
     j check_square_new
 delete_and_new:
     addi $a0, $a0, -1
+    move $t9, $t2
     jal delete_square
     addi $a1, $a1, 1
-    jal get_light_color
+    # jal get_light_color
+    move $t5, $t9
     jal fill_square
     addi $a0, $a0, 1
     addi $a1, $a1, -1
@@ -1010,6 +1095,38 @@ reset_color:
     sw $t6, 4($t5)
     j fill
     # cl
+get_next:
+    beq $a2, 7, restart_queue
+    beq $a2, 8, restart_queue
+    beq $a2, 9, restart_queue
+    beq $a2, 10, restart_queue
+    beq $a2, 11, restart_queue
+    addi $a2, $a2, 1
+    jr $ra
+restart_queue:
+    addi $a2, $a2, -7
+    # li $a2, 0
+    jr $ra
+reset_next:
+    lw $t0, ADDR_DSPL
+    li $t1, 56
+    mul $t1, $t1, 4
+    add $t0, $t0, $t1
+    li $t5, 0x000000
+    li $t2, 0
+reset_next_loop:
+    sw $t5, 0($t0)
+    sw $t5, 4($t0)
+    sw $t5, 8($t0)
+    sw $t5, 12($t0)
+    sw $t5, 16($t0)
+    sw $t5, 20($t0)
+    sw $t5, 24($t0)
+    sw $t5, 28($t0)
+    addi $t2, $t2, 1
+    addi $t0, $t0, 256
+    bne $t2, 64  reset_next_loop
+    jr $ra
     
 exit:
     li $v0, 10              # terminate the program gracefully
