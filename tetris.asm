@@ -270,7 +270,20 @@ Tetrominos:
     .word Z_Tetromino
     .word J_Tetromino
     .word L_Tetromino
-
+    
+patterns: 
+    .word zero_pattern
+    .word one_pattern
+    .word two_pattern
+    .word three_pattern
+    .word four_pattern
+    .word five_pattern
+    .word six_pattern
+    .word seven_pattern
+    .word eight_pattern
+    .word nine_pattern
+score:
+    .word 0
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -280,12 +293,73 @@ Current_Tetromino:
 Gravity_Speed:
     .word 5000000
 
+zero_pattern: .byte 1, 1, 1
+              .byte 1, 0, 1
+              .byte 1, 0, 1
+              .byte 1, 0, 1
+              .byte 1, 1, 1
+  
+one_pattern: .byte 0, 1, 0
+              .byte 1, 1, 0
+              .byte 0, 1, 0
+              .byte 0, 1, 0
+              .byte 1, 1, 1
+
+two_pattern: .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 1, 1, 1
+              .byte 1, 0, 0
+              .byte 1, 1, 1
+
+three_pattern: .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 1, 1, 1
+
+four_pattern: .byte 1, 0, 1
+              .byte 1, 0, 1
+              .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 0, 0, 1
+
+five_pattern: .byte 1, 1, 1
+              .byte 1, 0, 0
+              .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 1, 1, 1
+              
+six_pattern: .byte 1, 1, 1
+              .byte 1, 0, 0
+              .byte 1, 1, 1
+              .byte 1, 0, 1
+              .byte 1, 1, 1
+
+seven_pattern: .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 0, 0, 1
+              .byte 0, 0, 1
+              .byte 0, 0, 1
+
+eight_pattern: .byte 1, 1, 1
+              .byte 1, 0, 1
+              .byte 1, 1, 1
+              .byte 1, 0, 1
+              .byte 1, 1, 1
+
+nine_pattern: .byte 1, 1, 1
+              .byte 1, 0, 1
+              .byte 1, 1, 1
+              .byte 0, 0, 1
+              .byte 1, 1, 1
+              
+
 ##############################################################################
 # Code
 ##############################################################################
 	.text
 	.globl main
-
+    
 main:
     lw $t0, ADDR_DSPL       # $t0 = base address for display
     addi $t0, $t0, 2048
@@ -296,6 +370,10 @@ main:
     li $t8, 64
     li $t5, 0
     li $t1, 0
+    # li $a0, 9
+    # jal draw_double_digit
+    # jal reset_score
+    # j exit
 setup_loop:
     beq $t2, 3064, fill    # 4096 - 1024 - 8 (margin)
     div $t2, $t8
@@ -305,67 +383,85 @@ setup_loop:
     beq $t9, 0, increment # if remainer is 0, add left margin
 
     j condition
-
-score:
-    # given register with integer
-    # dissect the integer into its bytes
-    # for each byte have up to 9 conditionals
-    # draw specified number
-    j draw_one
-
-draw_one:
-    li $t9, 0
-    addi $t0, $t0, 4
-loop_one:
-    sw $t5, 0($t0)         # Store color value at the current address
-    # addi $t9, $t9, 256
-    beq $t9, 6, exit
-    addi $t0, $t0, 256
-    addi $t9, $t9, 1
-    j loop_one
-
-draw_two:
-    li $t9, 0
-    addi $t0, $t0, 4
-    li $t8, 4
-loop_two:
-    sw $t5, 0($t0)
-    add $t0, $t0, $t8
-    # basically, have t8 to add ono t0
-    # when t9 reaches certain milestones, needs to change t8
-    # can basically say if < 4 set to loop, if that fails then set to next (256), if less than 8 loop, if that fails it is set to next (-4)
-    bne $t9, 4, loop_two
-    li $t8, 256
-    bne $t9, 8, loop_two
-    li $t8, -4
-    bne $t9, 12, loop_two
-    li $t8, 256
-    bne $t9, 16, loop_two
-    li $t8, 4
-    bne $t9, 20, loop_two
-    j exit
     
-draw_three:
-    li $t9, 0
-    addi $t0, $t0, 4
-    li $t8, 4
-loop_two:
-    sw $t5, 0($t0)
-    add $t0, $t0, $t8
-    # basically, have t8 to add ono t0
-    # when t9 reaches certain milestones, needs to change t8
-    # can basically say if < 4 set to loop, if that fails then set to next (256), if less than 8 loop, if that fails it is set to next (-4)
-    bne $t9, 4, loop_two
-    addi $t0, $t0, -16
-    li $t8, 256
-    bne $t9, 8, loop_two
-    li $t8, -4
-    bne $t9, 12, loop_two
-    li $t8, 256
-    bne $t9, 16, loop_two
-    li $t8, 4
-    bne $t9, 20, loop_two
-    j exit
+reset_score:
+    lw $a0, score
+    li $t1, 10
+    div $a0, $t1       # Divide the number by 10
+    mflo $s0           # Move the quotient (first digit) to $s0
+    mfhi $s1           # Move the remainder (second digit) to $s1
+    
+    move $a0, $s0
+    li $t7, 0x000000     # Set pixel color (white)
+    li $t8, 0
+    jal draw_number            # Draw the first digit, args: $a0 (high digit), $a1 (base address)
+    
+    move $a0, $s1
+    addi $t8, $t8, 4
+    jal draw_number            # Draw the second digit
+
+    j finished_reset             # Return from subroutine
+    
+draw_double_digit:
+    lw $a0, score
+    li $t1, 10
+    div $a0, $t1       # Divide the number by 10
+    mflo $s0           # Move the quotient (first digit) to $s0
+    mfhi $s1           # Move the remainder (second digit) to $s1
+    
+    move $a0, $s0
+    li $t7, 0xffffff      # Set pixel color (white)
+    li $t8, 0
+    jal draw_number            # Draw the first digit, args: $a0 (high digit), $a1 (base address)
+    
+    move $a0, $s1
+    addi $t8, $t8, 4
+    jal draw_number            # Draw the second digit
+
+    j finished_score             # Return from subroutine
+    
+draw_number:
+    lw $a1, ADDR_DSPL
+    mul $t8, $t8, 4
+    add $a1, $a1, $t8
+    # li $a0, 0
+    sll $t0, $a0, 2         # Calculate offset in the patterns table
+    la $t1, patterns       # Load the address of the patterns table
+    add $t1, $t1, $t0      # Add offset to the base address of the table
+    lw $t2, 0($t1)         # Load the address of the pattern for the number
+
+    li $t3, 5              # Row count for patterns
+    li $t4, 3              # Column count for patterns
+
+draw_rows:
+    li $t5, 0              # Column index
+
+draw_cols:
+    lb $t6, 0($t2)         # Load the current pixel in the pattern
+    beqz $t6, skip_pixel   # If the pixel is 0, skip drawing
+
+    sw $t7, 0($a1)         # Write the color value to the display memory
+
+skip_pixel:
+    addi $t2, $t2, 1       # Move to the next pixel in the pattern
+    addi $a1, $a1, 4       # Move to the next pixel address in the display memory
+    addi $t5, $t5, 1       # Increment column index
+    blt $t5, $t4, draw_cols # Loop over columns
+
+    addi $a1, $a1, -12     # Reset to the start of the next row in the display memory
+    addi $a1, $a1, 256 # Adjust for the display width if necessary
+    subi $t3, $t3, 1       # Decrement row counter
+    bgtz $t3, draw_rows    # Loop over rows
+
+    jr $ra                 # Return from subroutine
+    
+# inc_score:
+    # jal reset_score
+    
+    # la $t0, score 
+    
+    
+    # j draw_one
     
 # grid creation
 increment:
@@ -411,6 +507,21 @@ set_light:
 
 # drawing tetrominos
 fill:
+    j reset_score
+finished_reset:
+    la $t0, score
+    lw $t0, 0($t0)
+    addi $t0, $t0, 1
+    la $t2, score
+    sw $t0, 0($t2)
+    j draw_double_digit
+finished_score:
+    li $a0, 80
+	li $a1,100#time
+	li $a2,37#32#31#29#instumanets
+	li $a3,100#volume
+	li $v0,33#syscall to beep with pause
+	syscall
     la $t5, Current_Tetromino
     lw $t6, 4($t5)
     beq $t6, 6, reset_color
@@ -616,6 +727,14 @@ loop_placement:
     j loop_placement
     
 gameover:
+    li $a0, 68
+	li $a1,500#time
+	li $a2,37#32#31#29#instumanets
+	li $a3,100#volume
+	li $v0,33#syscall to beep with pause
+	syscall
+    
+gameover_loop:
     # la $a2, Current_Tetromino
     # lw $a2, 0($a2)
     lw $t0, ADDR_KBRD   
@@ -623,7 +742,7 @@ gameover:
     beq $t8, 1, gameover_keyboard
     # beq $t8, 0x77, check_collision_w
     
-    j gameover
+    j gameover_loop
     
 gameover_keyboard:
     lw $t8, 4($t0)
@@ -865,8 +984,8 @@ key_s_pressed:
     j draw_tetromino
 key_d_pressed:
     addi $a0, $a0, 1
-    bne $a0, 14, draw_tetromino
-    li $a0, 13
+    bne $a0, 15, draw_tetromino
+    li $a0, 14
     j draw_tetromino
 return_pressed:
     j find_row_init
@@ -1101,6 +1220,7 @@ get_next:
     beq $a2, 9, restart_queue
     beq $a2, 10, restart_queue
     beq $a2, 11, restart_queue
+    beq $a2, 12, restart_queue
     addi $a2, $a2, 1
     jr $ra
 restart_queue:
