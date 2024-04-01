@@ -255,8 +255,8 @@ Colors:
     .word 0x0000FF
     .word 0xFFA500
 Light_Colors:
-    .word 0x33FFFF
-    .word 0xFFFF33
+    .word 0x42e9f5
+    .word 0xc9f720
     .word 0x993399
     .word 0x33FF33
     .word 0xFF3333
@@ -370,10 +370,6 @@ main:
     li $t8, 64
     li $t5, 0
     li $t1, 0
-    # li $a0, 9
-    # jal draw_double_digit
-    # jal reset_score
-    # j exit
 setup_loop:
     beq $t2, 3064, fill    # 4096 - 1024 - 8 (margin)
     div $t2, $t8
@@ -387,81 +383,72 @@ setup_loop:
 reset_score:
     lw $a0, score
     li $t1, 10
-    div $a0, $t1       # Divide the number by 10
-    mflo $s0           # Move the quotient (first digit) to $s0
-    mfhi $s1           # Move the remainder (second digit) to $s1
+    div $a0, $t1   
+    mflo $s0
+    mfhi $s1 
     
     move $a0, $s0
-    li $t7, 0x000000     # Set pixel color (white)
+    li $t7, 0x000000  
     li $t8, 0
-    jal draw_number            # Draw the first digit, args: $a0 (high digit), $a1 (base address)
+    jal draw_number   
     
     move $a0, $s1
     addi $t8, $t8, 4
-    jal draw_number            # Draw the second digit
+    jal draw_number 
 
-    j finished_reset             # Return from subroutine
+    j finished_reset 
     
 draw_double_digit:
     lw $a0, score
     li $t1, 10
-    div $a0, $t1       # Divide the number by 10
-    mflo $s0           # Move the quotient (first digit) to $s0
-    mfhi $s1           # Move the remainder (second digit) to $s1
+    div $a0, $t1
+    mflo $s0   
+    mfhi $s1 
     
     move $a0, $s0
-    li $t7, 0xffffff      # Set pixel color (white)
+    li $t7, 0xffffff 
     li $t8, 0
-    jal draw_number            # Draw the first digit, args: $a0 (high digit), $a1 (base address)
+    jal draw_number      
     
     move $a0, $s1
     addi $t8, $t8, 4
-    jal draw_number            # Draw the second digit
+    jal draw_number 
 
-    j finished_score             # Return from subroutine
+    j finished_score      
     
 draw_number:
     lw $a1, ADDR_DSPL
     mul $t8, $t8, 4
     add $a1, $a1, $t8
     # li $a0, 0
-    sll $t0, $a0, 2         # Calculate offset in the patterns table
-    la $t1, patterns       # Load the address of the patterns table
-    add $t1, $t1, $t0      # Add offset to the base address of the table
-    lw $t2, 0($t1)         # Load the address of the pattern for the number
+    sll $t0, $a0, 2   
+    la $t1, patterns   
+    add $t1, $t1, $t0  
+    lw $t2, 0($t1)
 
-    li $t3, 5              # Row count for patterns
-    li $t4, 3              # Column count for patterns
+    li $t3, 5 
+    li $t4, 3
 
 draw_rows:
-    li $t5, 0              # Column index
+    li $t5, 0
 
 draw_cols:
-    lb $t6, 0($t2)         # Load the current pixel in the pattern
-    beqz $t6, skip_pixel   # If the pixel is 0, skip drawing
-
-    sw $t7, 0($a1)         # Write the color value to the display memory
+    lb $t6, 0($t2)     
+    beqz $t6, skip_pixel
+    sw $t7, 0($a1)       
 
 skip_pixel:
-    addi $t2, $t2, 1       # Move to the next pixel in the pattern
-    addi $a1, $a1, 4       # Move to the next pixel address in the display memory
-    addi $t5, $t5, 1       # Increment column index
-    blt $t5, $t4, draw_cols # Loop over columns
+    addi $t2, $t2, 1   
+    addi $a1, $a1, 4 
+    addi $t5, $t5, 1 
+    blt $t5, $t4, draw_cols 
 
-    addi $a1, $a1, -12     # Reset to the start of the next row in the display memory
-    addi $a1, $a1, 256 # Adjust for the display width if necessary
-    subi $t3, $t3, 1       # Decrement row counter
-    bgtz $t3, draw_rows    # Loop over rows
+    addi $a1, $a1, -12
+    addi $a1, $a1, 256
+    subi $t3, $t3, 1   
+    bgtz $t3, draw_rows
 
-    jr $ra                 # Return from subroutine
-    
-# inc_score:
-    # jal reset_score
-    
-    # la $t0, score 
-    
-    
-    # j draw_one
+    jr $ra            
     
 # grid creation
 increment:
@@ -473,33 +460,31 @@ increment_alt:
     addi $t0, $t0, 64
     j condition
 condition:
-    # Determine color based on $t3's current value (0-7)
-    div $t3, $t6           # Divide $t3 by 8 using $t6, check the remainder
-    mfhi $t4               # Move the division remainder to $t4
-    beqz $t4, check_color  # If remainder is 0, check the current color
+    div $t3, $t6        
+    mfhi $t4             
+    beqz $t4, check_color 
     j set_color
 set_color:
-    sw $t5, 0($t0)         # Store color value at the current address
-    addi $t0, $t0, 4       # Increment address pointer by 4 bytes for the next pixel
-    addi $t2, $t2, 1       # Increment the overall pixel counter
-    addi $t3, $t3, 1       # Increment pattern counter (0-7, then repeat)
-    j setup_loop            # Jump back to paint the next pixel
+    sw $t5, 0($t0)       
+    addi $t0, $t0, 4       
+    addi $t2, $t2, 1      
+    addi $t3, $t3, 1     
+    j setup_loop         
 check_color:
-    # If $t3 is a multiple of 8, change the color
     div $t3, $t6
     mfhi $t7
     beqz $t7, toggle_color
     j set_color
 toggle_color:
     addi $s2, $t2, -8   # account for margin
-    andi $t1, $s2, 0xFF     # Zero out all but the lowest 8 bits of $t2
+    andi $t1, $s2, 0xFF  
     beqz $t1, other   
-    beq $t5, 0x212121, set_light # If the current color is dark, change to light
-    li $t5, 0x212121          # Otherwise, change to dark
+    beq $t5, 0x212121, set_light 
+    li $t5, 0x212121      
     j set_color
 other:
-    beq $t5, 0x424242, set_light # If the current color is light, change to light
-    li $t5, 0x212121           # Otherwise, change to dark
+    beq $t5, 0x424242, set_light 
+    li $t5, 0x212121          
     j set_color
 set_light:
     li $t5, 0x424242           
@@ -518,9 +503,9 @@ finished_reset:
 finished_score:
     li $a0, 80
 	li $a1,100#time
-	li $a2,37#32#31#29#instumanets
+	li $a2,37
 	li $a3,100#volume
-	li $v0,33#syscall to beep with pause
+	li $v0,33#syscall
 	syscall
     la $t5, Current_Tetromino
     lw $t6, 4($t5)
@@ -528,30 +513,30 @@ finished_score:
     addi $t6, $t6, 1
     sw $t6, 4($t5)
     jal get_light_color
-    li $a0, 2    # x coordinate of the tetromino's base point on the grid 
-    li $a1, 2    # y coordinate of the tetromino's base point on the grid
+    li $a0, 2  
+    li $a1, 2  
     jal get_tetromino
-    la $a2, Current_Tetromino  # Address of the T Tetromino data\
+    la $a2, Current_Tetromino 
     lw $a2, 0($a2)
 draw_tetromino:
     j check_placement
 finish_check:
     jal get_light_color
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino 
     lw $a2, 0($a2)
-    li $a3, 4   # Load the size of the tetromino (2 x number of squares)
+    li $a3, 4   
 draw_square_loop:
-    lw $t8, 0($a2)         # Load x offset of the current square
-    lw $t9, 4($a2)         # Load y offset of the current square
-    add $a0, $a0, $t8     # Add it to $a0
-    add $a1, $a1, $t9     # Add it to $a1
-    jal fill_square        # Draw the square
+    lw $t8, 0($a2)      
+    lw $t9, 4($a2)       
+    add $a0, $a0, $t8     
+    add $a1, $a1, $t9    
+    jal fill_square  
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
     addi $a2, $a2, 8
-    addi $a3, $a3, -1      # Decrement the counter
-    bnez $a3, draw_square_loop  # If there are more squares, continue the loop
+    addi $a3, $a3, -1   
+    bnez $a3, draw_square_loop  
 draw_five_next:
     jal reset_next
     li $t6, 0
@@ -567,7 +552,6 @@ draw_next:
     li $t1, 0
     li $t5, 0xffffff
 draw_next_loop:
-    # addi $t7, $t7, 1
     lw $t2, ADDR_DSPL
     li $t3, 1402
     mul $t3, $t3, 4
@@ -584,14 +568,9 @@ draw_next_loop:
     addi $t1, $t1, 1
     addi $a2, $a2, 8
     bne $t1, 4, draw_next_loop
-    # addi $t7, $t7, 1
-    # j draw_next
     addi $t6, $t6, 1
     bne $t6, 5, draw_next
     
-    
-# move_tetromino:
-    # li $t1, 0
 move_tetromino:
     la $a2, Current_Tetromino
     lw $a2, 0($a2)
@@ -608,15 +587,15 @@ gravity:
     j delete_tetromino_other
 gravity_draw:
     la $t2, Gravity_Speed
-    lw $t0, 0($t2)     # Load the number into register $t0
-    li $t1, 99         # Load the constant 75 into register $t1
+    lw $t0, 0($t2)     
+    li $t1, 99     
     
-    mult $t0, $t1      # Multiply the number by 75
-    mflo $t3           # Move the lower 32 bits of the product into $t2
+    mult $t0, $t1     
+    mflo $t3          
     
-    li $t4, 100        # Load the constant 100 into register $t3
-    div $t3, $t4       # Divide the result by 100
-    mflo $t5           # Move the quotient (result of division) into $t4
+    li $t4, 100      
+    div $t3, $t4     
+    mflo $t5   
     sw $t5, 0($t2)
     addi $a1, $a1, 1
     li $t1, 0
@@ -624,86 +603,84 @@ gravity_draw:
 
 check_collision_gravity:
     li $t7, 0
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino 
     lw $a2, 0($a2)
 loop_gravity:
-    # for each piece, sub 1 from x and see if black or colour, then exit
-    # otherwise, proceed after 4
     lw $s0, 0($a2)
     lw $s1, 4($a2)
     addi $s1, $s1, 1
     add $a0, $a0, $s0
     add $a1, $a1, $s1
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t0, $a0, 2      
+    sll $t1, $a1, 2      
     lw $t2, ADDR_DSPL
-    mul $t4, $t1, 64     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $t3, 0($t2)             # Load the color at current address
+    mul $t4, $t1, 64    
+    add $t4, $t4, $t0   
+    mul $t4, $t4, 4      
+    add $t2, $t2, $t4    
+    lw $t3, 0($t2)         
     sub $a0, $a0, $s0
     sub $a1, $a1, $s1
-    beq $t3, 0x00FFFF, return_pressed # If color does not match, go to next 
-    beq $t3, 0xFFFF00, return_pressed # If color does not match, go to next 
-    beq $t3, 0x800080, return_pressed # If color does not match, go to next 
-    beq $t3, 0x00FF00, return_pressed # If color does not match, go to next 
-    beq $t3, 0xFF0000, return_pressed # If color does not match, go to next 
-    beq $t3, 0x0000FF, return_pressed # If color does not match, go to next 
-    beq $t3, 0xFFA500, return_pressed # If color does not match, go to next 
-    beq $t3, 0x000000, return_pressed # If color does not match, go to next 
+    beq $t3, 0x00FFFF, return_pressed 
+    beq $t3, 0xFFFF00, return_pressed 
+    beq $t3, 0x800080, return_pressed 
+    beq $t3, 0x00FF00, return_pressed 
+    beq $t3, 0xFF0000, return_pressed 
+    beq $t3, 0x0000FF, return_pressed 
+    beq $t3, 0xFFA500, return_pressed 
+    beq $t3, 0x000000, return_pressed 
     beq $t7, 4, gravity
     addi $a2, $a2, 8
     addi $t7, $t7, 1
     j loop_gravity
     
 delete_tetromino_other:
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino 
     lw $a2, 0($a2)
-    li $a3,4   # Load the size of the tetromino (2 x number of squares)
+    li $a3,4   
 delete_square_loop_other:
-    lw $t8, 0($a2)         # Load x offset of the current square
-    lw $t9, 4($a2)         # Load y offset of the current square
-    add $a0, $a0, $t8     # Add it to $a0
-    add $a1, $a1, $t9     # Add it to $a1
-    jal delete_square        # Draw the square
+    lw $t8, 0($a2)         
+    lw $t9, 4($a2)         
+    add $a0, $a0, $t8    
+    add $a1, $a1, $t9     
+    jal delete_square        
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
     addi $a2, $a2, 8
-    addi $a3, $a3, -1      # Decrement the counter
-    bnez $a3, delete_square_loop_other  # If there are more squares, continue the loop
+    addi $a3, $a3, -1      
+    bnez $a3, delete_square_loop_other  
     j gravity_draw
 
 draw_tetromino_and_new:
     jal get_color
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino  
     lw $a2, 0($a2)
-    li $a3, 4   # Load the size of the tetromino (2 x number of squares)
+    li $a3, 4   
 draw_square_loop_and_new:
-    lw $t8, 0($a2)         # Load x offset of the current square
-    lw $t9, 4($a2)         # Load y offset of the current square
-    add $a0, $a0, $t8     # Add it to $a0
-    add $a1, $a1, $t9     # Add it to $a1
-    jal fill_square        # Draw the square
+    lw $t8, 0($a2)        
+    lw $t9, 4($a2)         
+    add $a0, $a0, $t8  
+    add $a1, $a1, $t9   
+    jal fill_square     
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
     addi $a2, $a2, 8
-    addi $a3, $a3, -1      # Decrement the counter
-    bnez $a3, draw_square_loop_and_new  # If there are more squares, continue the loop
+    addi $a3, $a3, -1    
+    bnez $a3, draw_square_loop_and_new  
     j check_for_lines_init
 
 check_placement:
     li $t7, 0
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino 
     lw $a2, 0($a2)
 loop_placement:
     lw $s0, 0($a2)
     lw $s1, 4($a2)
     add $a0, $a0, $s0
     add $a1, $a1, $s1
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
+    sll $t0, $a0, 2      
     sll $t1, $a1, 2      
     lw $t2, ADDR_DSPL
     mul $t4, $t1, 64
@@ -728,46 +705,65 @@ loop_placement:
     
 gameover:
     li $a0, 68
-	li $a1,500#time
-	li $a2,37#32#31#29#instumanets
-	li $a3,100#volume
-	li $v0,33#syscall to beep with pause
+	li $a1,500
+	li $a2,37
+	li $a3,100
+	li $v0,33
 	syscall
+	
+	li $t5, 0xFF0000
+	lw $t6, ADDR_DSPL
+	addi $t6, $t6, 7800
+	sw $t5, 0($t6)
+	sw $t5, 4($t6)
+	sw $t5, 8($t6)
+	sw $t5, 12($t6)
+	addi $t6, $t6, 256
+	sw $t5, 0($t6)
+	sw $t5, 4($t6)
+	sw $t5, 8($t6)
+	sw $t5, 12($t6)
+	addi $t6, $t6, 256
+	sw $t5, 0($t6)
+	sw $t5, 4($t6)
+	sw $t5, 8($t6)
+	sw $t5, 12($t6)
+	addi $t6, $t6, 256
+	sw $t5, 0($t6)
+	sw $t5, 4($t6)
+	sw $t5, 8($t6)
+	sw $t5, 12($t6)
     
 gameover_loop:
-    # la $a2, Current_Tetromino
-    # lw $a2, 0($a2)
     lw $t0, ADDR_KBRD   
     lw $t8, 0($t0)       
     beq $t8, 1, gameover_keyboard
-    # beq $t8, 0x77, check_collision_w
-    
     j gameover_loop
     
 gameover_keyboard:
     lw $t8, 4($t0)
-    beq $t8, 0x71, main
+    beq $t8, 0x72, main
     
 delete_tetromino:
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino  
     lw $a2, 0($a2)
-    li $a3,4   # Load the size of the tetromino (2 x number of squares)
+    li $a3,4   
 delete_square_loop:
-    lw $t8, 0($a2)         # Load x offset of the current square
-    lw $t9, 4($a2)         # Load y offset of the current square
-    add $a0, $a0, $t8     # Add it to $a0
-    add $a1, $a1, $t9     # Add it to $a1
-    jal delete_square        # Draw the square
+    lw $t8, 0($a2)        
+    lw $t9, 4($a2)         
+    add $a0, $a0, $t8    
+    add $a1, $a1, $t9  
+    jal delete_square    
 
     sub $a0, $a0, $t8      
     sub $a1, $a1, $t9
     addi $a2, $a2, 8
-    addi $a3, $a3, -1      # Decrement the counter
-    bnez $a3, delete_square_loop  # If there are more squares, continue the loop
+    addi $a3, $a3, -1   
+    bnez $a3, delete_square_loop 
     j keyboard_input
 
 check_collision_w:
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino  
     lw $a2, 0($a2)
     lw $a2, 64($a2)
     li $t7, 0
@@ -776,14 +772,14 @@ loop_w:
     lw $t1, 4($a2)
     add $a0, $a0, $t0
     add $a1, $a1, $t1
-    sll $t8, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t9, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t8, $a0, 2    
+    sll $t9, $a1, 2    
     lw $t2, ADDR_DSPL
-    mul $t4, $t9, 64    # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t8     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $s0, 0($t2)             # Load the color at current address
+    mul $t4, $t9, 64   
+    add $t4, $t4, $t8    
+    mul $t4, $t4, 4      
+    add $t2, $t2, $t4  
+    lw $s0, 0($t2)         
     
     sub $a0, $a0, $t0
     sub $a1, $a1, $t1
@@ -805,41 +801,38 @@ loop_w:
     
 check_collision_a:
     li $t7, 0
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino  
     lw $a2, 0($a2)
 loop_a:
-    # for each piece, sub 1 from x and see if black or colour, then exit
-    # otherwise, proceed after 4
     lw $s0, 0($a2)
     lw $s1, 4($a2)
     addi $s0, $s0, -1
     add $a0, $a0, $s0
     add $a1, $a1, $s1
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t0, $a0, 2      
+    sll $t1, $a1, 2     
     lw $t2, ADDR_DSPL
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $t3, 0($t2)             # Load the color at current address
+    mul $t4, $t1, 64 
+    add $t4, $t4, $t0    
+    mul $t4, $t4, 4      
+    add $t2, $t2, $t4    
+    lw $t3, 0($t2)         
     sub $a0, $a0, $s0
     sub $a1, $a1, $s1
-    beq $t3, 0x00FFFF, move_tetromino # If color does not match, go to next 
-    beq $t3, 0xFFFF00, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x800080, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x00FF00, move_tetromino # If color does not match, go to next 
-    beq $t3, 0xFF0000, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x0000FF, move_tetromino # If color does not match, go to next 
-    beq $t3, 0xFFA500, move_tetromino # If color does not match, go to next 
-    beq $t3, 0x000000, move_tetromino # If color does not match, go to next 
+    beq $t3, 0x00FFFF, move_tetromino
+    beq $t3, 0xFFFF00, move_tetromino  
+    beq $t3, 0x800080, move_tetromino 
+    beq $t3, 0x00FF00, move_tetromino 
+    beq $t3, 0xFF0000, move_tetromino 
+    beq $t3, 0x0000FF, move_tetromino 
+    beq $t3, 0xFFA500, move_tetromino 
+    beq $t3, 0x000000, move_tetromino 
     beq $t7, 4, init_move
     addi $a2, $a2, 8
     addi $t7, $t7, 1
     j loop_a
 check_collision_s:
-    la $a2, Current_Tetromino  # Address of the T Tetromino data
+    la $a2, Current_Tetromino
     lw $a2, 0($a2)
     lw $a2, 68($a2)
     li $t7, 0
@@ -848,21 +841,18 @@ loop_s:
     lw $t1, 4($a2)
     add $a0, $a0, $t0
     add $a1, $a1, $t1
-
-    sll $t8, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t9, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
+    sll $t8, $a0, 2    
+    sll $t9, $a1, 2    
     lw $t2, ADDR_DSPL
-    mul $t4, $t9, 64    # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t8     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    lw $s0, 0($t2)             # Load the color at current address
-    
+    mul $t4, $t9, 64   
+    add $t4, $t4, $t8     
+    mul $t4, $t4, 4      
+    add $t2, $t2, $t4     
+    lw $s0, 0($t2)         
     sub $a0, $a0, $t0
     sub $a1, $a1, $t1
     addi $t7, $t7, 1
     addi $a2, $a2, 8
-    
     beq $s0, 0x00FFFF, move_tetromino
     beq $s0, 0xFFFF00, move_tetromino
     beq $s0, 0x800080, move_tetromino
@@ -872,10 +862,11 @@ loop_s:
     beq $s0, 0xFFA500, move_tetromino  
     beq $s0, 0x000000, move_tetromino
     beq $t7, 4, init_move
-    
     j loop_s
 
 check_collision_d:
+    li $v0, 1
+    syscall
     li $t7, 0
     la $a2, Current_Tetromino
     lw $a2, 0($a2)
@@ -888,8 +879,7 @@ loop_d:
     sll $t0, $a0, 2      
     sll $t1, $a1, 2      
     lw $t2, ADDR_DSPL
-    li $t3, 64         
-    mul $t4, $t1, $t3    
+    mul $t4, $t1, 64   
     add $t4, $t4, $t0     
     mul $t4, $t4, 4  
     add $t2, $t2, $t4   
@@ -918,7 +908,6 @@ keyboard:
     beq $t8, 0x73, check_collision_s
     beq $t8, 0x64, check_collision_d
     beq $t8, 0x78, pause # change to p
-    # beq $t8, 0x65, init_move
     j init_move
 
 init_move:
@@ -983,6 +972,8 @@ key_s_pressed:
     sw $a2, 0($s0)
     j draw_tetromino
 key_d_pressed:
+    # li $v0, 1
+    # syscall
     addi $a0, $a0, 1
     bne $a0, 15, draw_tetromino
     li $a0, 14
@@ -1083,7 +1074,6 @@ check:
     beq $s0, 0xFF0000, check_new
     beq $s0, 0x0000FF, check_new
     beq $s0, 0xFFA500, check_new
-    # beq $s0, 0x000000, check_new # If color does not match, go to next 
     j new_row
 check_new:
     beq $t9, 11, remove_row
@@ -1111,7 +1101,6 @@ check_square_new:
     add $t2, $t2, $t4
     lw $t2, 0($t2)  
     addi $a0, $a0, 1
-    # changed registers
     beq $t2, 0x00FFFF, delete_and_new 
     beq $t2, 0xFFFF00, delete_and_new 
     beq $t2, 0x800080, delete_and_new 
@@ -1119,50 +1108,42 @@ check_square_new:
     beq $t2, 0xFF0000, delete_and_new
     beq $t2, 0x0000FF, delete_and_new 
     beq $t2, 0xFFA500, delete_and_new 
-    # beq $s0, 0x000000, delete_and_new # If color does not match, go to next 
     j check_square_new
 delete_and_new:
     addi $a0, $a0, -1
     move $t9, $t2
     jal delete_square
     addi $a1, $a1, 1
-    # jal get_light_color
+
     move $t5, $t9
     jal fill_square
     addi $a0, $a0, 1
     addi $a1, $a1, -1
     j check_square_new
 
-    
 # drawing individual squares
 fill_square:
     li $s0, 4
-    # Convert grid coordinates to pixel coordinates
-    sll $t0, $a0, 2       # $t0 = x * 4 (since each cell is 4 pixels wide)
-    sll $t1, $a1, 2       # $t1 = y * 4 (since each cell is 4 pixels high)
-
-    # Calculate starting memory address for the square
-    lw $t2, ADDR_DSPL     # $t2 = base address for the display
-    # need to add 64 times y plus x for initial location
-    li $t3, 64            # $t3 = width of the display in pixels
-    mul $t4, $t1, $t3     # $t4 = y * width of display (row offset)
-    add $t4, $t4, $t0     # $t4 = row offset + x (final pixel offset)\
-    mul $t4, $t4, 4       # multiply by 4
-    add $t2, $t2, $t4     # $t2 = starting address for the square
-    li $t6, 4             # $t6 = counter for rows
+    sll $t0, $a0, 2      
+    sll $t1, $a1, 2     
+    lw $t2, ADDR_DSPL   
+    li $t3, 64         
+    mul $t4, $t1, $t3     
+    add $t4, $t4, $t0    
+    mul $t4, $t4, 4      
+    add $t2, $t2, $t4   
+    li $t6, 4            
 draw_square_row:
-    li $t7, 4             # $t7 = counter for columns
+    li $t7, 4          
 draw_square_column:
-    sw $t5, 0($t2)        # Set the pixel color
-    addi $t2, $t2, 4      # Move to the next pixel in the row
-    addi $t7, $t7, -1     # Decrement the column counter
-    bnez $t7, draw_square_column # Continue drawing columns if $t7 != 0
-
-    # Move to the next row
-    addi $t2, $t2, 240     # Skip the remaining pixels to get to the start of the next row (64 * 4 - 16 = 240)
-    addi $t6, $t6, -1     # Decrement the row counter
-    bnez $t6, draw_square_row   # Continue drawing rows if $t6 != 0
-    jr $ra  # Return to the caller
+    sw $t5, 0($t2)    
+    addi $t2, $t2, 4     
+    addi $t7, $t7, -1   
+    bnez $t7, draw_square_column 
+    addi $t2, $t2, 240     # (64 * 4 - 16 = 240)
+    addi $t6, $t6, -1    
+    bnez $t6, draw_square_row 
+    jr $ra 
 
 # deleting squares
 delete_square:
@@ -1251,14 +1232,3 @@ reset_next_loop:
 exit:
     li $v0, 10              # terminate the program gracefully
     syscall
-
-game_loop:
-	# 1a. Check if key has been pressed
-    # 1b. Check which key has been pressed
-    # 2a. Check for collisions
-	# 2b. Update locations (paddle, ball)
-	# 3. Draw the screen
-	# 4. Sleep
-
-    #5. Go back to 1
-    b game_loop
